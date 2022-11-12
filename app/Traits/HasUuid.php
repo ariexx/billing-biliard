@@ -1,6 +1,8 @@
 <?php
 namespace App\Traits;
 
+use Str;
+
 trait HasUuid
 {
     protected static function bootHasUuid(): void
