@@ -17,7 +17,12 @@ class Product extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $guarded = ['*'];
+    protected $fillable = [
+        'type',
+        'name',
+        'product_code',
+        'price',
+    ];
 
     public function hours(): BelongsToMany
     {

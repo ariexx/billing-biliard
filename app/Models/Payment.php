@@ -16,7 +16,10 @@ class Payment extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $guarded = ['*'];
+    protected $fillable = [
+        'name',
+        'is_active',
+    ];
 
     public function orders(): HasMany
     {

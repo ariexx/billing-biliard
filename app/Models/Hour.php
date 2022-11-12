@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Hour extends Model
 {
-    use HasFactory, HasUuid;
+    use HasFactory, HasUuid, SoftDeletes;
     protected $table = 'hours';
     protected $primaryKey = 'uuid';
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $guarded = ['*'];
+    protected $fillable = [
+        'hour',
+    ];
 }

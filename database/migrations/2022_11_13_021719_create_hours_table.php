@@ -11,6 +11,7 @@ return new class extends Migration {
 			$table->uuid('uuid')->primary();
             $table->integer('hour');
 			$table->timestamps();
+            $table->softDeletes();
 		});
 	}
 

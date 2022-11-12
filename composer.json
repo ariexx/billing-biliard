@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.0.2",
         "filament/filament": "^2.0",
+        "filament/forms": "^2.0",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
@@ -14,6 +15,7 @@
         "livewire/livewire": "^2.10"
     },
     "require-dev": {
+        "doctrine/dbal": "^3.5",
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.0.1",

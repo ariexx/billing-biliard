@@ -17,7 +17,11 @@ class Order extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $guarded = ['*'];
+    protected $fillable = [
+        'user_uuid',
+        'payment_uuid',
+        'total',
+    ];
 
     public function user(): BelongsTo
     {
