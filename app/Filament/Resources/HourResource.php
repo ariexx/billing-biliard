@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\HourResource\Pages;
 use App\Filament\Resources\HourResource\RelationManagers;
 use App\Models\Hour;
+use Faker\Provider\Text;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -12,6 +13,7 @@ use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use function Termwind\renderUsing;
 
 class HourResource extends Resource
 {
@@ -25,7 +27,7 @@ class HourResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('hour')
                     ->required()
-                ->rules(['required', 'numeric']),
+                    ->rules(['required', 'numeric']),
                 Forms\Components\TextInput::make('price')
                     ->required()
                 ->rules(['required', 'numeric']),

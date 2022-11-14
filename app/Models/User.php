@@ -50,6 +50,12 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    //make name attribute ucfirst
+    public function getNameAttribute($value): string
+    {
+        return ucfirst($value);
+    }
+
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);

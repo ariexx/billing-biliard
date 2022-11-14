@@ -24,6 +24,12 @@ class Product extends Model
         'price',
     ];
 
+    //uc first for type
+    public function getTypeAttribute($value): string
+    {
+        return ucfirst($value);
+    }
+
     public function hours(): BelongsToMany
     {
         return $this->belongsToMany(Hour::class, 'hours_to_products',

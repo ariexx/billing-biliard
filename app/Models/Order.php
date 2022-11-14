@@ -23,6 +23,15 @@ class Order extends Model
         'total',
     ];
 
+    //make user_uuid always filled by auth()->id()
+    protected static function boot()
+    {
+        parent::boot();
+        static::creating(function ($model) {
+            $model->user_uuid = auth()->id();
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

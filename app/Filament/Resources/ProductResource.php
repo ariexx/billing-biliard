@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProductResource\Pages;
 use App\Filament\Resources\ProductResource\RelationManagers;
+use App\Models\Hour;
 use App\Models\Product;
 use Filament\Forms;
 use Filament\Resources\Form;
@@ -57,7 +58,7 @@ class ProductResource extends Resource
                     ->relationship('hours', 'hours')
                     ->label('Hours')
                     ->placeholder('Select hours')
-                    ->options(\App\Models\Hour::all()->pluck('hour', 'uuid'))
+                    ->options(Hour::orderBy('hour', 'asc')->get()->pluck('hour', 'uuid'))
                     ->rules(['array', 'accepted_if:type,billiard'])
                     ->helperText('Jika tipe billiard, pilih jam yang tersedia.'),
             ]);
@@ -79,7 +80,9 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->sortable()
                     ->searchable(),
-                Tables\Columns\TextColumn::make('hours.hour')])
+                //sort tag column by ascending
+                Tables\Columns\TagsColumn::make('hours.hour')
+            ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])

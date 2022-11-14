@@ -11,7 +11,6 @@ return new class extends Migration {
 			$table->uuid('uuid')->primary();
             $table->uuid('user_uuid');
             $table->uuid('payment_uuid');
-            $table->unsignedBigInteger('total');
 			$table->timestamps();
             $table->softDeletes();
 		});

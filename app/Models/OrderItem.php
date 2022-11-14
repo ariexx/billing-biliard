@@ -16,7 +16,12 @@ class OrderItem extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
-    protected $guarded = ['*'];
+    protected $fillable = [
+        'order_uuid',
+        'product_uuid',
+        'quantity',
+        'price',
+    ];
 
     public function order(): BelongsTo
     {
