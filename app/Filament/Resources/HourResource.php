@@ -24,7 +24,11 @@ class HourResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('hour')
-                    ->required(),
+                    ->required()
+                ->rules(['required', 'numeric']),
+                Forms\Components\TextInput::make('price')
+                    ->required()
+                ->rules(['required', 'numeric']),
             ]);
     }
 

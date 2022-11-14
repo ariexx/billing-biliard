@@ -49,7 +49,17 @@ class ProductResource extends Resource
                 Forms\Components\TextInput::make('price')
                     ->required()
                     ->placeholder('Enter a price')
+                    ->rules(['required', 'numeric'])
                     ->helperText('The price of the product.'),
+                //failed input if type is not billiard
+                Forms\Components\Select::make('hours')
+                    ->multiple()
+                    ->relationship('hours', 'hours')
+                    ->label('Hours')
+                    ->placeholder('Select hours')
+                    ->options(\App\Models\Hour::all()->pluck('hour', 'uuid'))
+                    ->rules(['array', 'accepted_if:type,billiard'])
+                    ->helperText('Jika tipe billiard, pilih jam yang tersedia.'),
             ]);
     }
 
@@ -69,7 +79,7 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('price')
                     ->sortable()
                     ->searchable(),
-            ])
+                Tables\Columns\TextColumn::make('hours.hour')])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
