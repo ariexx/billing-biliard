@@ -29,7 +29,7 @@ class ProductResource extends Resource
                     ->autofocus()
                     ->placeholder('Enter a name')
                     ->rules(['required', 'string'])
-                ->helperText('The name of the product.'),
+                    ->helperText('The name of the product.'),
                 Forms\Components\TextInput::make('product_code')
                     ->required()
                     ->placeholder('Enter a product code')
@@ -45,10 +45,17 @@ class ProductResource extends Resource
                         'billiard' => 'Billiard',
                         'other' => 'Other',
                     ])
+                    ->reactive()
+                    ->afterStateUpdated(function (\Closure $set, $state) {
+                        if ($state === 'billiard') {
+                            $set('price', 0);
+                        }
+                    })
                     ->rules(['required', 'in:drink,snack,food,billiard,other'])
-                    ->helperText('The type of the product.'),
+                    ->helperText('Jika tipe billiard maka harga akan di set 0.'),
                 Forms\Components\TextInput::make('price')
                     ->required()
+                    ->dehydrated()
                     ->placeholder('Enter a price')
                     ->rules(['required', 'numeric'])
                     ->helperText('The price of the product.'),

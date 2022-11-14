@@ -6,6 +6,7 @@ use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
 use App\Models\Order;
 use App\Models\Product;
+use Faker\Provider\Text;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -49,15 +50,24 @@ class OrderResource extends Resource
                             ->required()
                             ->reactive()
                             ->afterStateUpdated(function (\Closure $set, $state){
-                                $set('price', $state * session()->get('price'));
+                                $totalPrice = $state * session()->get('price');
+                                session('totalPrice', $totalPrice);
+                                $set('price', $totalPrice);
+                                $set('total', $totalPrice);
                             })
                             ->rules(['required', 'numeric']),
                         Forms\Components\TextInput::make('price')
                             ->numeric()
                             ->dehydrated()
                             ->disabled(),
+                        //make the total price is latest
+                        Forms\Components\TextInput::make('total')
+                            ->numeric()
+                            ->dehydrated()
+                            ->disabled(),
                     ])
-                    ->columnSpan(2),
+                    ->columnSpan(2)
+                ->columns(2),
             ]);
     }
 
