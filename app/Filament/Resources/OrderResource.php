@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Faker\Provider\Text;
 use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
@@ -31,7 +32,7 @@ class OrderResource extends Resource
                     ->label('Payment Type')
                     ->relationship('payment', 'name', fn($query) => $query->orderBy('name'))
                     ->rules(['required', 'string', 'exists:payments,uuid'])
-                ->columnSpan(2),
+                    ->columnSpan(2),
                 Forms\Components\Repeater::make('orderItems')
                     ->relationship('orderItems')
                     ->schema([
@@ -39,17 +40,21 @@ class OrderResource extends Resource
                             ->options(fn() => Product::all()->pluck('name', 'uuid'))
                             ->reactive()
                             ->afterStateUpdated(function (\Closure $set, $state) {
-                                $product = Product::findOrFail($state);
-                                $set('price', $product->price);
-                                //set the price of the product
-                                session()->put('price', $product->price);
+                                $product = Product::with('hours')->whereUuid($state)->firstOrFail();
+                                //check if the product has hours
+                                if ($product->hours->count() > 0) {
+                                    $price = $set('price', $product->hours->first()->price);
+                                } else {
+                                    $price = $set('price', $product->price);
+                                }
+                                session()->put('price', $price);
                             })
                             ->required()
                             ->rules(['required', 'string', 'exists:products,uuid']),
                         Forms\Components\TextInput::make('quantity')
                             ->required()
                             ->reactive()
-                            ->afterStateUpdated(function (\Closure $set, $state){
+                            ->afterStateUpdated(function (\Closure $set, $state) {
                                 $totalPrice = $state * session()->get('price');
                                 session('totalPrice', $totalPrice);
                                 $set('price', $totalPrice);
@@ -67,7 +72,7 @@ class OrderResource extends Resource
                             ->disabled(),
                     ])
                     ->columnSpan(2)
-                ->columns(2),
+                    ->columns(2),
             ]);
     }
 
