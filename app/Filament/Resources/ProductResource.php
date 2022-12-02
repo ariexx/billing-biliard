@@ -59,10 +59,10 @@ class ProductResource extends Resource
                     ->placeholder('Enter a price')
                     ->rules(['required', 'numeric'])
                     ->helperText('The price of the product.'),
-                //failed input if type is not billiard
-                Forms\Components\Select::make('hours')
+                //add hour to product with price
+                Forms\Components\Select::make('hourPrice')
                     ->multiple()
-                    ->relationship('hours', 'hours')
+                    ->relationship('hourPrice', 'hour')
                     ->label('Hours')
                     ->placeholder('Select hours')
                     ->options(Hour::orderBy('hour', 'asc')->get()->pluck('hour', 'uuid'))
