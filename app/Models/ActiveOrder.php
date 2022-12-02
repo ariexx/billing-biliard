@@ -20,6 +20,12 @@ class ActiveOrder extends Pivot
         'end_at'
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+        'started_at' => 'datetime',
+        'end_at' => 'datetime'
+    ];
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);

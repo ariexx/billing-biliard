@@ -15,6 +15,7 @@
 
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
+    @bukStyles(true)
 </head>
 <body>
 @livewireScripts
@@ -84,5 +85,6 @@
         @yield('content')
     </main>
 </div>
+@bukScripts(true)
 </body>
 </html>
