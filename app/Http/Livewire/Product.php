@@ -5,9 +5,11 @@ namespace App\Http\Livewire;
 use App\Models\ActiveOrder;
 use App\Models\Hour;
 use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Product as ProductModel;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
 use Livewire\Component;
-use App\Models\Product as ProductModel;
+
 class Product extends Component
 {
     use LivewireAlert;
@@ -18,7 +20,7 @@ class Product extends Component
     public function render()
     {
         $billiardProducts = ProductModel::with('hours')->whereType('billiard')
-        ->orderBy('created_at', 'asc')->get();
+            ->orderBy('created_at', 'asc')->get();
         return view('livewire.product', compact('billiardProducts'));
     }
 
@@ -29,6 +31,13 @@ class Product extends Component
 
     public function saveOrder($productId, $hoursId)
     {
+        $payment = Payment::first()->uuid;
+
+        if ($payment == null) {
+            $this->alert('error', 'Please add payment method first!');
+            return;
+        }
+
         //check if there is an active order
         $activeOrder = ActiveOrder::whereProductUuid($productId)->whereIsActive(true)->first();
         if ($activeOrder) {
@@ -36,10 +45,26 @@ class Product extends Component
             return;
         }
 
-        $product = ProductModel::findOrFail($productId);
-        $hour = Hour::findOrFail($hoursId);
+        if (!$this->hourUuid) {
+            $this->alert('error', 'Please select a time');
+            return;
+        }
+
+        $product = ProductModel::find($productId);
+
+        if (!$product) {
+            $this->alert('error', 'Product not found');
+            return;
+        }
+
+        $hour = Hour::find($hoursId);
+        if (!$hour) {
+            $this->alert('error', 'Hour not found');
+            return;
+        }
+
         $order = Order::create([
-            'payment_uuid' => '8f427bf1-1553-4509-b1ee-967e3f639a90',
+            'payment_uuid' => $payment,
         ]);
 
         $order->activeOrder()->create([
@@ -60,7 +85,7 @@ class Product extends Component
 
         if ($saveToOrderItem) {
             $this->alert('success', 'Order has been saved!');
-        }else{
+        } else {
             $this->alert('error', 'Something went wrong!');
             \Log::error('Something went wrong!', ['saveToOrderItem' => $saveToOrderItem]);
         }

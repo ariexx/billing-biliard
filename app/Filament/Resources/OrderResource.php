@@ -4,17 +4,15 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\OrderResource\Pages;
 use App\Filament\Resources\OrderResource\RelationManagers;
+use App\Models\Hour;
 use App\Models\Order;
 use App\Models\Product;
-use Faker\Provider\Text;
 use Filament\Forms;
-use Filament\Notifications\Notification;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class OrderResource extends Resource
@@ -36,7 +34,7 @@ class OrderResource extends Resource
                 Forms\Components\Repeater::make('orderItems')
                     ->relationship('orderItems')
                     ->schema([
-                        Forms\Components\Select::make('product_uuid')
+                        Forms\Components\Select::make('product_uuid')->label('Product')
                             ->options(fn() => Product::all()->pluck('name', 'uuid'))
                             ->reactive()
                             ->afterStateUpdated(function (\Closure $set, $state) {

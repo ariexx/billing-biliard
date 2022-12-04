@@ -34,6 +34,11 @@ class Order extends Model
         });
     }
 
+    public function getTotalAttribute()
+    {
+        return $this->orderItems->sum('price');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

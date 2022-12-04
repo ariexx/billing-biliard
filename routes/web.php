@@ -18,4 +18,23 @@ Route::get('/', function () {
 });
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::group(['middleware' => 'auth'], function () {
+    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])
+        ->name('home');
+    Route::get('/order-history', [\App\Http\Controllers\HomeController::class, 'orderHistory'])
+        ->name('order-history');
+
+    //order view
+    Route::get('/order/{uuid}', [\App\Http\Controllers\OrderController::class, 'view'])
+        ->name('order.view');
+    Route::get('/order/{uuid}/edit', [\App\Http\Controllers\OrderController::class, 'edit'])
+        ->name('order.edit');
+//    Route::put('/order/{uuid}/update', [\App\Http\Controllers\OrderController::class, 'update'])
+//        ->name('order.update');
+
+    //order item
+    Route::get('/order-item/{uuidOrder}/edit', [\App\Http\Controllers\OrderItemController::class, 'edit'])
+        ->name('order-item.edit');
+    Route::delete('/order-item/{uuid}/delete', [\App\Http\Controllers\OrderItemController::class, 'destroy'])
+        ->name('order-item.destroy');
+});

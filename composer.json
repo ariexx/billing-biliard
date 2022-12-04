@@ -15,7 +15,9 @@
         "laravel/sanctum": "^3.0",
         "laravel/tinker": "^2.7",
         "laravel/ui": "^4.1",
-        "livewire/livewire": "^2.10"
+        "livewire/livewire": "^2.10",
+        "yajra/laravel-datatables": "^9.0",
+        "yajra/laravel-datatables-oracle": "^10.0"
     },
     "require-dev": {
         "doctrine/dbal": "^3.5",
