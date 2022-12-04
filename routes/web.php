@@ -33,6 +33,8 @@ Route::group(['middleware' => 'auth'], function () {
 //        ->name('order.update');
 
     //order item
+    Route::put('/order-item/{orderUuid}/update', [\App\Http\Controllers\OrderItemController::class, 'update'])
+    ->name('order-item.update');
     Route::get('/order-item/{uuidOrder}/edit', [\App\Http\Controllers\OrderItemController::class, 'edit'])
         ->name('order-item.edit');
     Route::delete('/order-item/{uuid}/delete', [\App\Http\Controllers\OrderItemController::class, 'destroy'])

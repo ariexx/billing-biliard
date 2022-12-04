@@ -60,9 +60,9 @@ class ProductResource extends Resource
                     ->rules(['required', 'numeric'])
                     ->helperText('The price of the product.'),
                 //add hour to product with price
-                Forms\Components\Select::make('hourPrice')
+                Forms\Components\Select::make('hours')
                     ->multiple()
-                    ->relationship('hourPrice', 'hour')
+                    ->relationship('hours', 'hour')
                     ->label('Hours')
                     ->placeholder('Select hours')
                     ->options(Hour::orderBy('hour', 'asc')->get()->pluck('hour', 'uuid'))
