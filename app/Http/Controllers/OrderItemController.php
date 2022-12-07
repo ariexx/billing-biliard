@@ -12,19 +12,38 @@ class OrderItemController extends Controller
 
     public function update($uuid, \Illuminate\Http\Request $request)
     {
-        //TODO not validated yet
-        if (!empty($request['product'])) {
-            $product = Product::where('uuid', $request['product'])->first();
-            $order = Order::whereUuid($uuid)->first();
-            $order->orderItems()->create([
-                'product_uuid' => $product->uuid,
-                'quantity' => 1,
-                'price' => $product->price,
-            ]);
+        $only = $request->only([
+            'product',
+            'hour',
+            'quantity',
+        ]);
+        // Validate the request
+        $validator = \Validator::make($only, [
+            'product' => 'array',
+            'product.*' => 'nullable|exists:products,uuid',
+            'hour' => 'nullable|exists:hours,uuid',
+            'quantity' => 'array',
+            'quantity.*' => 'nullable|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        if (!empty($request['hour'])) {
-            $hour = Hour::whereUuid($request['hour'])->firstOrFail();
+        if ($only['product']['0'] != null) {
+            $product = Product::whereIn('uuid', $only['product'])->get();
+            $order = Order::whereUuid($uuid)->first();
+            foreach ($product as $item => $value) {
+                $order->orderItems()->create([
+                    'product_uuid' => $value->uuid,
+                    'quantity' => $only['quantity'][$item],
+                    'price' => $value->price * $only['quantity'][$item],
+                ]);
+            }
+        }
+
+        if (!empty($only['hour'])) {
+            $hour = Hour::whereUuid($only['hour'])->firstOrFail();
             $order = Order::whereUuid($uuid)->firstOrFail();
             $order->orderItems()->create([
                 'product_uuid' => $order->orderItems()->first()->product_uuid,
