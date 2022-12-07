@@ -6,7 +6,7 @@
                     <h5 class="card-title"><b>{{$product->name}}</b></h5>
                     <select class="form-select mb-3" wire:model.defer="selectedHour">
                         <option selected>Pilih Menu</option>
-                            @foreach($product->hours as $hour)
+                            @foreach($product->hours()->orderBy('hour', 'asc')->get() as $hour)
                                 <option value="{{$hour->uuid}}">{{$hour->hour}}</option>
                             @endforeach
                     </select>
