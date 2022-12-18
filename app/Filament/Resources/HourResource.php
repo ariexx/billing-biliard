@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\HourResource\Pages;
 use App\Filament\Resources\HourResource\RelationManagers;
 use App\Models\Hour;
-use Faker\Provider\Text;
 use Filament\Forms;
 use Filament\Resources\Form;
 use Filament\Resources\Resource;
@@ -13,7 +12,6 @@ use Filament\Resources\Table;
 use Filament\Tables;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use function Termwind\renderUsing;
 
 class HourResource extends Resource
 {
@@ -28,9 +26,16 @@ class HourResource extends Resource
                 Forms\Components\TextInput::make('hour')
                     ->required()
                     ->rules(['required', 'numeric']),
+                Forms\Components\Select::make('type')
+                    ->required()
+                    ->options([
+                        'free time' => 'Free time',
+                        'regular' => 'Regular',
+                    ])
+                    ->rules(['in:free time,regular']),
                 Forms\Components\TextInput::make('price')
                     ->required()
-                ->rules(['required', 'numeric']),
+                    ->rules(['required', 'numeric']),
             ]);
     }
 
@@ -39,8 +44,14 @@ class HourResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('hour')
-                ->sortable()
-                ->default(true),
+                    ->sortable()
+                    ->default(true),
+                Tables\Columns\TextColumn::make('type')
+                    ->sortable()
+                    ->default(true),
+                Tables\Columns\TextColumn::make('price')
+                    ->sortable()
+                    ->default(true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime(),
                 Tables\Columns\TextColumn::make('updated_at')

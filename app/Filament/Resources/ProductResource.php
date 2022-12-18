@@ -41,7 +41,6 @@ class ProductResource extends Resource
                     ->options([
                         'drink' => 'Drink',
                         'snack' => 'Snack',
-                        'food' => 'Food',
                         'billiard' => 'Billiard',
                         'other' => 'Other',
                     ])

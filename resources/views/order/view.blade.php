@@ -22,6 +22,10 @@
                             <th>Product Name</th>
                             <th>Product Price</th>
                             <th>Product Quantity</th>
+                            <th>Hour</th>
+                            <th>Started At</th>
+                            <th>Ended At</th>
+                            <th>Duration</th>
                             <th>Sub Total</th>
                         </tr>
                         </thead>
@@ -37,6 +41,10 @@
                                     @endif
                                 </td>
                                 <td>{{$item->quantity}}</td>
+                                <td>{{$item->activeOrder->hour ?? '-'}}</td>
+                                <td>{{$item->activeOrder->started_at ?? '-'}}</td>
+                                <td>{{$item->activeOrder->end_at ?? '-'}}</td>
+                                <td>{{$item->activeOrder->duration ?? '-'}} Menit</td>
                                 <td>
                                     @if($item->product->type === "Billiard")
                                         {{rupiah($item->quantity * $item->price)}}

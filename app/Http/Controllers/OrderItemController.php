@@ -45,18 +45,31 @@ class OrderItemController extends Controller
         if (!empty($only['hour'])) {
             $hour = Hour::whereUuid($only['hour'])->firstOrFail();
             $order = Order::whereUuid($uuid)->firstOrFail();
-            $order->orderItems()->create([
-                'product_uuid' => $order->orderItems()->first()->product_uuid,
-                'hour_uuid' => $hour->uuid,
-                'quantity' => 1,
-                'price' => $hour->price,
-            ]);
-            $order->activeOrder()->update([
-                'hour' => $order->activeOrder->hour + $hour->hour,
-                'is_active' => true,
-                'started_at' => $order->activeOrder->started_at,
-                'end_at' => $order->activeOrder->end_at->addHours($hour->hour),
-            ]);
+            if ($hour->type == 'free time') {
+                $activeOrder = $order->activeOrder()->create([
+                    'product_uuid' => $order->orderItems()->first()->product_uuid,
+                    'hour' => $hour->hour,
+                    'is_active' => 1,
+                    'started_at' => now(),
+                    'end_at' => now()->addHours($hour->hour),
+                ]);
+
+                $order->orderItems()->create([
+                    'product_uuid' => $order->orderItems()->first()->product_uuid,
+                    'active_order_unique_id' => $activeOrder->unique_id,
+                    'quantity' => 1,
+                    'price' => $hour->price,
+                ]);
+            }else if ($hour->type == 'regular') {
+                $order->activeOrder()->update([
+                    'hour' => $order->activeOrder->hour + $hour->hour,
+                    'is_active' => true,
+                    'started_at' => $order->activeOrder->started_at,
+                    'end_at' => $order->activeOrder->end_at->addHours($hour->hour),
+                ]);
+            }else{
+                return redirect()->back()->with('error', 'Something went wrong');
+            }
 
             return redirect()->route('order.view', $uuid);
         }

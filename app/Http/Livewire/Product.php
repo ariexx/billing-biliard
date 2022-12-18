@@ -67,7 +67,7 @@ class Product extends Component
             'payment_uuid' => $payment,
         ]);
 
-        $order->activeOrder()->create([
+        $activeOrder = $order->activeOrder()->create([
             'order_uuid' => $order->uuid,
             'product_uuid' => $product->uuid,
             'hour' => $hour->hour,
@@ -76,12 +76,19 @@ class Product extends Component
             'end_at' => now()->addHours($hour->hour),
         ]);
 
-        $saveToOrderItem = $order->orderItems()->create([
+        $saveToOrderItem = $activeOrder->orderItem()->create([
+            'order_uuid' => $order->uuid,
             'product_uuid' => $product->uuid,
-            'hour_uuid' => $hoursId,
             'quantity' => 1,
             'price' => $hour->price,
+            'active_order_unique_id' => $activeOrder->unique_id,
         ]);
+//        $saveToOrderItem = $order->orderItems()->create([
+//            'product_uuid' => $product->uuid,
+//            'hour_uuid' => $hoursId,
+//            'quantity' => 1,
+//            'price' => $hour->price,
+//        ]);
 
         if ($saveToOrderItem) {
             $this->alert('success', 'Order has been saved!');

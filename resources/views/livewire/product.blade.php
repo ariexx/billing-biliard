@@ -4,7 +4,7 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title"><b>{{$product->name}}</b></h5>
-                    <select class="form-select mb-3" wire:model.defer="selectedHour">
+                    <select class="form-select mb-3" wire:model.lazy="selectedHour">
                         <option selected>Pilih Menu</option>
                             @foreach($product->hours()->orderBy('hour', 'asc')->get() as $hour)
                                 <option value="{{$hour->uuid}}">{{$hour->hour}}</option>
