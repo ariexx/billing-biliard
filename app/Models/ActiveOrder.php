@@ -11,7 +11,7 @@ class ActiveOrder extends Pivot
 {
     protected $table = 'active_orders';
     public $incrementing = false;
-    protected $primaryKey = 'order_uuid';
+    protected $primaryKey = 'unique_id';
     protected $keyType = 'string';
 
     protected $fillable = [
@@ -39,7 +39,7 @@ class ActiveOrder extends Pivot
     }
 
     //get attributes how much time in started_at and end_at
-    public function getDurationAttribute(): int
+    public function getDurationAttribute(): ?int
     {
         return $this->started_at->diffInMinutes($this->end_at);
     }
