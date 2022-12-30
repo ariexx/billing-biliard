@@ -43,4 +43,7 @@ Route::group(['middleware' => 'auth'], function () {
         ->name('order-item.edit');
     Route::delete('/order-item/{uuid}/delete', [\App\Http\Controllers\OrderItemController::class, 'destroy'])
         ->name('order-item.destroy');
+
+    //print
+    Route::post('/print', \App\Http\Controllers\PrintController::class)->name('print');
 });
