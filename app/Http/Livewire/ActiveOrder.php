@@ -38,4 +38,19 @@ class ActiveOrder extends Component
 
         $this->alert('success', 'Order Selesai');
     }
+
+    public function habiskanWaktu($uniqueId)
+    {
+        $activeOrder = ModelsActiveOrder::where('unique_id', $uniqueId)->first();
+        if(!$activeOrder) {
+            $this->alert('error', 'Order tidak ditemukan');
+            return;
+        }
+
+        $activeOrder->update([
+            'is_active' => false,
+        ]);
+
+        $this->alert('success', 'Aksi berhasil');
+    }
 }

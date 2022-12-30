@@ -15,6 +15,10 @@
                                     <span x-text="timer.seconds">{{ $component->seconds() }}</span> seconds
                                 </x-countdown>
                             </b>
+                            <button class="btn btn-danger btn-sm mt-2"
+                                    wire:click.prevent="habiskanWaktu('{{$order->unique_id}}')">
+                                Habiskan
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -31,7 +35,10 @@
                                     <span x-text="timer.seconds">{{ $component->seconds() }}</span> seconds
                                 </x-countdown>
                             </b>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="stopTimer('{{$order->order_uuid}}', '{{$order->unique_id}}')">Selesai</button>
+                            <button class="btn btn-danger btn-sm mt-2"
+                                    wire:click.prevent="stopTimer('{{$order->order_uuid}}', '{{$order->unique_id}}')">
+                                Selesai
+                            </button>
                         </div>
                     </div>
                 </div>
