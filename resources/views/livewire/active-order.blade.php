@@ -1,4 +1,4 @@
-<div wire:poll.10000ms>
+<div wire:poll.5000ms>
     <div class="row">
         <h3><b>Meja Aktif</b></h3>
         @foreach ($activeOrder as $order)
