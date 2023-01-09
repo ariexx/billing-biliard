@@ -33,6 +33,12 @@ class OrdersDataTable extends DataTable
             ->addColumn('total', function (Order $order) {
                 return 'Rp '. number_format($order->orderItems->sum('price'), 2, ',', '.');
             })
+            ->addColumn('table_number', function (Order $order) {
+                return $order?->orderItems?->first()?->product?->name;
+            })
+            ->addColumn('payment_method', function (Order $order) {
+                return $order->payment->name;
+            })
             ->setRowId('id');
     }
 
@@ -59,7 +65,7 @@ class OrdersDataTable extends DataTable
             ->columns($this->getColumns())
             ->minifiedAjax()
             //->dom('Bfrtip')
-            ->orderBy(3, 'desc')
+            ->orderBy(5, 'desc')
             ->selectStyleSingle()
             ->buttons([
                 Button::make('excel'),
@@ -83,7 +89,9 @@ class OrdersDataTable extends DataTable
 //            Column::make('id'),
             Column::make('order_number'),
             Column::make('cashier'),
+            Column::make('table_number'),
             Column::make('total'),
+            Column::make('payment_method'),
             Column::make('created_at'),
             Column::computed('action')
                 ->exportable(false)

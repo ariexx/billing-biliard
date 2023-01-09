@@ -15,6 +15,11 @@
                                     <span x-text="timer.seconds">{{ $component->seconds() }}</span> seconds
                                 </x-countdown>
                             </b>
+                            <p class="mb-2">
+                                <a href="{{route('order.view', $order->order_uuid)}}" class="text-sm-left text-muted" style="text-decoration: none;" target="_blank">
+                                    Lihat Detail Order
+                                </a>
+                            </p>
                             <button class="btn btn-danger btn-sm mt-2"
                                     wire:click.prevent="habiskanWaktu('{{$order->unique_id}}')">
                                 Habiskan
@@ -35,6 +40,11 @@
                                     <span x-text="timer.seconds">{{ $component->seconds() }}</span> seconds
                                 </x-countdown>
                             </b>
+                            <p class="mb-2">
+                                <a href="{{route('order.view', $order->order_uuid)}}" class="text-sm-left text-muted" style="text-decoration: none;" target="_blank">
+                                    Lihat Detail Order
+                                </a>
+                            </p>
                             <button class="btn btn-danger btn-sm mt-2"
                                     wire:click.prevent="stopTimer('{{$order->order_uuid}}', '{{$order->unique_id}}')">
                                 Selesai
