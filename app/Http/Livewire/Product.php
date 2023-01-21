@@ -92,9 +92,17 @@ class Product extends Component
 
         if ($saveToOrderItem) {
             $this->alert('success', 'Order has been saved!');
+            //reset form after success
+            $this->resetForm();
         } else {
             $this->alert('error', 'Something went wrong!');
             \Log::error('Something went wrong!', ['saveToOrderItem' => $saveToOrderItem]);
         }
+    }
+
+    public function resetForm()
+    {
+        $this->selectedHour = null;
+        $this->hourUuid = null;
     }
 }
