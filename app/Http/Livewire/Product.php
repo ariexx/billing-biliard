@@ -100,6 +100,7 @@ class Product extends Component
         }
     }
 
+    //for resetting form
     public function resetForm()
     {
         $this->selectedHour = null;
