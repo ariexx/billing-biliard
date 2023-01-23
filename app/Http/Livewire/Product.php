@@ -15,18 +15,43 @@ class Product extends Component
     use LivewireAlert;
 
     public $selectedHour;
+    public $selectedProduct;
     public $hourUuid;
+    public $productHours;
+    public $selectedDrink;
 
     public function render()
     {
+        if(!empty($this->selectedProduct)) {
+            $this->productHours = ProductModel::where('uuid', $this->selectedProduct)->first()->hours;
+        }
+
         $billiardProducts = ProductModel::with('hours')->whereType('billiard')
             ->orderBy('created_at', 'asc')->get();
-        return view('livewire.product', compact('billiardProducts'));
+
+        $drinkProducts = ProductModel::whereType('drink')
+            ->orderBy('created_at', 'asc')->get();
+
+        return view('livewire.product', [
+            'billiardProducts' => $billiardProducts,
+            'productHours' => $this->productHours,
+            'drinkProducts' => $drinkProducts,
+        ]);
+    }
+
+    public function updatedSelectedDrink($product_uuid)
+    {
+        $this->selectedDrink = $product_uuid;
     }
 
     public function updatedSelectedHour($hourId)
     {
         $this->hourUuid = Hour::find($hourId)->uuid;
+    }
+
+    public function updatedSelectedProduct($productUuid)
+    {
+        $this->selectedProduct = $productUuid;
     }
 
     public function saveOrder($productId, $hoursId)
@@ -100,10 +125,49 @@ class Product extends Component
         }
     }
 
+    public function saveDrink($product_uuid)
+    {
+        $payment = Payment::first()->uuid;
+
+        if ($payment == null) {
+            $this->alert('error', 'Please add payment method first!');
+            return;
+        }
+
+        $product = ProductModel::where('uuid', $product_uuid)->first();
+
+        if (!$product) {
+            $this->alert('error', 'Product not found');
+            return;
+        }
+
+        $order = Order::create([
+            'payment_uuid' => $payment,
+        ]);
+
+        $saveToOrderItem = $order->orderItems()->create([
+            'product_uuid' => $product->uuid,
+            'quantity' => 1,
+            'price' => $product->price,
+        ]);
+
+        if ($saveToOrderItem) {
+            $this->alert('success', 'Order has been saved!');
+            //reset form after success
+            $this->resetForm();
+        } else {
+            $this->alert('error', 'Something went wrong!');
+            \Log::error('Something went wrong!', ['saveToOrderItem' => $saveToOrderItem]);
+        }
+    }
+
     //for resetting form
     public function resetForm()
     {
         $this->selectedHour = null;
         $this->hourUuid = null;
+        $this->selectedProduct = null;
+        $this->productHours = null;
+        $this->selectedDrink = null;
     }
 }

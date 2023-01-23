@@ -33,7 +33,7 @@ class OrdersDataTable extends DataTable
             ->addColumn('total', function (Order $order) {
                 return 'Rp '. number_format($order->orderItems->sum('price'), 2, ',', '.');
             })
-            ->addColumn('table_number', function (Order $order) {
+            ->addColumn('product_name', function (Order $order) {
                 return $order?->orderItems?->first()?->product?->name;
             })
             ->addColumn('payment_method', function (Order $order) {
@@ -89,7 +89,7 @@ class OrdersDataTable extends DataTable
 //            Column::make('id'),
             Column::make('order_number'),
             Column::make('cashier'),
-            Column::make('table_number'),
+            Column::make('product_name'),
             Column::make('total'),
             Column::make('payment_method'),
             Column::make('created_at'),
