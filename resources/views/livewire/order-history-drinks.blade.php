@@ -34,7 +34,8 @@
                             <tr>
                                 <th>Order Number</th>
                                 <th>Cashier</th>
-                                <th>Item Name</th>
+                                <th>Nama Barang</th>
+                                <th>Jumlah</th>
                                 <th>Total</th>
                                 <th>Payment Method</th>
                                 <th>Dibuat Pada</th>
@@ -46,6 +47,7 @@
                                 <td>{{ $orderItem->order->order_number }}</td>
                                 <td>{{ $orderItem->order->user->name }}</td>
                                 <td>{{ $orderItem->product->name }}</td>
+                                <td>{{ $orderItem->quantity }}</td>
                                 <td>{{ rupiah($orderItem->price) }}</td>
                                 <td>{{ $orderItem->order->payment->name }}</td>
                                 <td>{{ $orderItem->created_at}}</td>
