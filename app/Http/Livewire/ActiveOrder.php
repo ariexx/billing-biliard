@@ -13,6 +13,10 @@ class ActiveOrder extends Component
 
     public $orderSuccess;
 
+    public function resetData()
+    {
+    }
+
     public function render()
     {
         $activeOrder = \App\Models\ActiveOrder::whereIsActive(true)->get();
@@ -42,7 +46,7 @@ class ActiveOrder extends Component
     public function habiskanWaktu($uniqueId)
     {
         $activeOrder = ModelsActiveOrder::where('unique_id', $uniqueId)->first();
-        if(!$activeOrder) {
+        if (!$activeOrder) {
             $this->alert('error', 'Order tidak ditemukan');
             return;
         }
