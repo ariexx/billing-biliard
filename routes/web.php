@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,9 +15,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    if(auth()->check()){
+    if (auth()->check()) {
         return redirect()->route('home');
-    }else{
+    } else {
         return view('auth.login');
     }
 });
@@ -27,18 +28,20 @@ Route::group(['middleware' => 'auth'], function () {
         ->name('home');
     Route::get('/order-history', [\App\Http\Controllers\HomeController::class, 'orderHistory'])
         ->name('order-history');
+    Route::get('/order-history/drinks', [\App\Http\Controllers\HomeController::class, 'orderHistoryDrinks'])
+        ->name('order-history.drinks');
 
     //order view
     Route::get('/order/{uuid}', [\App\Http\Controllers\OrderController::class, 'view'])
         ->name('order.view');
     Route::get('/order/{uuid}/edit', [\App\Http\Controllers\OrderController::class, 'edit'])
         ->name('order.edit');
-//    Route::put('/order/{uuid}/update', [\App\Http\Controllers\OrderController::class, 'update'])
-//        ->name('order.update');
+    //    Route::put('/order/{uuid}/update', [\App\Http\Controllers\OrderController::class, 'update'])
+    //        ->name('order.update');
 
     //order item
     Route::put('/order-item/{orderUuid}/update', [\App\Http\Controllers\OrderItemController::class, 'update'])
-    ->name('order-item.update');
+        ->name('order-item.update');
     Route::get('/order-item/{uuidOrder}/edit', [\App\Http\Controllers\OrderItemController::class, 'edit'])
         ->name('order-item.edit');
     Route::delete('/order-item/{uuid}/delete', [\App\Http\Controllers\OrderItemController::class, 'destroy'])
