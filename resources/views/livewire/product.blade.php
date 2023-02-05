@@ -7,7 +7,7 @@
                     <select class="form-select mb-3" name="selectedHour" wire:model="selectedHour">
                         <option selected>Pilih Menu</option>
                         @foreach ($product->hours()->orderBy('hour', 'asc')->get() as $hour)
-                            <option value="{{ $hour->uuid }}">{{ $hour->hour }}</option>
+                            <option value="{{ $hour->uuid }}">{{ $hour->name }}</option>
                         @endforeach
                     </select>
                     <button wire:click.prevent="saveOrder('{{ $product->uuid }}', '{{ $hourUuid }}')"

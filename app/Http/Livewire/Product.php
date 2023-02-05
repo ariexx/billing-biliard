@@ -26,7 +26,7 @@ class Product extends Component
 
     public function updatedSelectedHour($hourId)
     {
-        $this->hourUuid = Hour::find($hourId)->uuid;
+        $this->hourUuid = Hour::find($hourId)?->uuid;
     }
 
     public function saveOrder($productId, $hoursId)

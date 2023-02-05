@@ -18,6 +18,7 @@ class Hour extends Model
     protected $fillable = [
         'hour',
         'price',
-        'type'
+        'type',
+        'name'
     ];
 }

@@ -64,7 +64,7 @@ class ProductResource extends Resource
                     ->relationship('hours', 'hour')
                     ->label('Hours')
                     ->placeholder('Select hours')
-                    ->options(Hour::orderBy('hour', 'asc')->get()->pluck('hour', 'uuid'))
+                    ->options(Hour::orderBy('hour', 'asc')->get()->pluck('name', 'uuid'))
                     ->rules(['array', 'accepted_if:type,billiard'])
                     ->helperText('Jika tipe billiard, pilih jam yang tersedia.'),
             ]);
@@ -87,7 +87,7 @@ class ProductResource extends Resource
                     ->sortable()
                     ->searchable(),
                 //sort tag column by ascending
-                Tables\Columns\TagsColumn::make('hours.hour')
+                Tables\Columns\TagsColumn::make('hours.name')
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),

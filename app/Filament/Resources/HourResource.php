@@ -23,6 +23,9 @@ class HourResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->rules(['required', 'string']),
                 Forms\Components\TextInput::make('hour')
                     ->required()
                     ->rules(['required', 'numeric']),
@@ -43,6 +46,8 @@ class HourResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('name')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('hour')
                     ->sortable()
                     ->default(true),
