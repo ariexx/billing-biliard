@@ -49,4 +49,9 @@ Route::group(['middleware' => 'auth'], function () {
 
     //print
     Route::post('/print', \App\Http\Controllers\PrintController::class)->name('print');
+
+    //only admin can access this route
+    Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index'])
+        ->middleware('can:isAdmin')
+        ->name('logs');
 });

@@ -69,14 +69,16 @@
                         <p>
                             <strong>Total: {{rupiah($order->total)}}</strong>
                         </p>
-                        <form action="{{route('print')}}" method="POST">
-                            @csrf
-                            <input type="hidden" name="order_uuid" value="{{$order->uuid}}">
-                            <button type="submit" class="btn btn-primary"><i
-                                    class="fa fa-print"></i>
-                                Print
-                            </button>
-                        </form>
+                        @if($order->created_at->diffInDays(now()) < 1 || auth()->user()->role === "admin")
+                            <form action="{{route('print')}}" method="POST">
+                                @csrf
+                                <input type="hidden" name="order_uuid" value="{{$order->uuid}}">
+                                <button type="submit" class="btn btn-primary"><i
+                                        class="fa fa-print"></i>
+                                    Print
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -16,7 +16,7 @@ class PrintController extends Controller
 
         $order = Order::findOrFail($only['order_uuid']);
 
-        try{
+        try {
             // Set params
             $mid = null;
             $store_name = 'Billiard Store';
@@ -83,8 +83,15 @@ class PrintController extends Controller
             // Print receipt
             $printer->printReceipt();
 
+            //Log how many times the receipt is printed
+            $order->update([
+                'print_count' => $order->print_count + 1
+            ]);
+
+            \Log::channel('daily')->info("Print Success: Order Number : {$order->order_number} - Total Print : {$order->print_count} - Printed At : " . now()->format("Y-m-d H:i:s") . " - Printed By : " . auth()->user()->name);
+
             return redirect()->back()->with('success', 'Print success');
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
     }

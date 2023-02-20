@@ -23,6 +23,7 @@ class Order extends Model
         'user_uuid',
         'payment_uuid',
         'total',
+        'print_count'
     ];
 
     protected static function boot()
