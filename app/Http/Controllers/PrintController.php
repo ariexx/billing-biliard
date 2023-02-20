@@ -19,11 +19,11 @@ class PrintController extends Controller
         try {
             // Set params
             $mid = null;
-            $store_name = 'Billiard Store';
-            $store_address = 'Jalan Setia Ujung Delitua';
-            $store_phone = '081234567890';
-            $store_email = 'store@gmail.com';
-            $store_website = 'billiard-store.com';
+            $store_name = 'Black Dragon Pool';
+            $store_address = 'Jalan Kapten Pattimura No.93, Lubuk Pakam';
+//            $store_phone = '081234567890';
+//            $store_email = 'store@gmail.com';
+//            $store_website = 'billiard-store.com';
 //            $tax_percentage = 10;
             $transaction_id = $order->order_number;
             $currency = 'Rp';
