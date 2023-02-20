@@ -61,6 +61,12 @@ class OrderItemController extends Controller
                     'price' => $hour->price,
                 ]);
             }else if ($hour->type == 'regular') {
+				$order->orderItems()->create([
+					'product_uuid' => $order->orderItems()->first()->product_uuid,
+					'quantity' => 1,
+					'price' => $hour->price,
+					'active_order_unique_id' => $order->activeOrder->unique_id,
+				]);
                 $order->activeOrder()->update([
                     'hour' => $order->activeOrder->hour + $hour->hour,
                     'is_active' => true,
