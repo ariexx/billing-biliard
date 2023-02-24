@@ -22,7 +22,7 @@ class OrdersDataTable extends DataTable
     {
         return (new EloquentDataTable($query))
             ->addColumn('action', function ($row) {
-                return '<a href="'.route('order.view', $row->uuid).'" class="btn btn-sm btn-primary">View</a>';
+                return '<a href="' . route('order.view', $row->uuid) . '" class="btn btn-sm btn-primary">View</a>';
             })
             ->editColumn('created_at', function (Order $order) {
                 return $order->created_at->format('d/m/Y H:i:s');
@@ -31,7 +31,7 @@ class OrdersDataTable extends DataTable
                 return $order->user->name;
             })
             ->addColumn('total', function (Order $order) {
-                return 'Rp '. number_format($order->orderItems->sum('price'), 2, ',', '.');
+                return 'Rp ' . number_format($order->orderItems->sum('price'), 2, ',', '.');
             })
             ->addColumn('table_number', function (Order $order) {
                 return $order?->orderItems?->first()?->product?->name;
@@ -50,7 +50,8 @@ class OrdersDataTable extends DataTable
      */
     public function query(Order $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()
+            ->where('user_uuid', auth()->user()->id);
     }
 
     /**
@@ -86,7 +87,7 @@ class OrdersDataTable extends DataTable
     public function getColumns(): array
     {
         return [
-//            Column::make('id'),
+            //            Column::make('id'),
             Column::make('order_number'),
             Column::make('cashier'),
             Column::make('table_number'),

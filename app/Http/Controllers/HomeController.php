@@ -33,6 +33,8 @@ class HomeController extends Controller
         //get total income this day
         $totalIncome = OrderItem::query()?->whereDate('created_at', today())?->whereHas('product', function ($query) {
             $query->where('type', 'billiard');
+        })->whereHas('order', function ($query) {
+            $query->where('user_uuid', auth()->id());
         })->sum('price');
         return $table->render('livewire.order-history', [
             'totalOrder' => $totalOrder,
