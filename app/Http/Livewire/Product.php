@@ -81,14 +81,15 @@ class Product extends Component
             'product_uuid' => $product->uuid,
             'quantity' => 1,
             'price' => $hour->price,
+            'hour' => $hour->hour,
             'active_order_unique_id' => $activeOrder->unique_id,
         ]);
-//        $saveToOrderItem = $order->orderItems()->create([
-//            'product_uuid' => $product->uuid,
-//            'hour_uuid' => $hoursId,
-//            'quantity' => 1,
-//            'price' => $hour->price,
-//        ]);
+        //        $saveToOrderItem = $order->orderItems()->create([
+        //            'product_uuid' => $product->uuid,
+        //            'hour_uuid' => $hoursId,
+        //            'quantity' => 1,
+        //            'price' => $hour->price,
+        //        ]);
 
         if ($saveToOrderItem) {
             $this->alert('success', 'Order has been saved!');
