@@ -22,7 +22,8 @@ class OrderItem extends Model
         'product_uuid',
         'quantity',
         'price',
-        'active_order_unique_id'
+        'active_order_unique_id',
+        'hour'
     ];
 
     public function order(): BelongsTo

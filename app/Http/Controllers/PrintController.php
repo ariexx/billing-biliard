@@ -24,16 +24,16 @@ class PrintController extends Controller
             $store_phone = null;
             $store_email = null;
             $store_website = null;
-//            $tax_percentage = 10;
+            //            $tax_percentage = 10;
             $transaction_id = $order->order_number;
             $currency = 'Rp';
-//            $image_path = 'logo.png';
+            //            $image_path = 'logo.png';
 
             // Set items
             $items = [];
             foreach ($order->orderItems as $item) {
                 $items[] = [
-                    'name' => $item->product->name . ' - ' . $item?->activeOrder?->duration . ' Menit',
+                    'name' => $item->product->name . ' - ' . $item?->hour . ' Jam',
                     'qty' => $item->quantity,
                     'price' => $item->product->type == 'Billiard' ? $item->price : $item->product->price,
                 ];
@@ -62,7 +62,7 @@ class PrintController extends Controller
             }
 
             // Set tax
-//            $printer->setTax($tax_percentage);
+            //            $printer->setTax($tax_percentage);
 
             // Calculate total
             $printer->calculateSubTotal();
@@ -76,9 +76,9 @@ class PrintController extends Controller
             //$printer->setLogo($image_path);
 
             // Set QR code
-//            $printer->setQRcode([
-//                'tid' => $transaction_id,
-//            ]);
+            //            $printer->setQRcode([
+            //                'tid' => $transaction_id,
+            //            ]);
 
             // Print receipt
             $printer->printReceipt();

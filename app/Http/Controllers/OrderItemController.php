@@ -59,21 +59,23 @@ class OrderItemController extends Controller
                     'active_order_unique_id' => $activeOrder->unique_id,
                     'quantity' => 1,
                     'price' => $hour->price,
+                    'hour' => $hour->hour,
                 ]);
-            }else if ($hour->type == 'regular') {
-				$order->orderItems()->create([
-					'product_uuid' => $order->orderItems()->first()->product_uuid,
-					'quantity' => 1,
-					'price' => $hour->price,
-					'active_order_unique_id' => $order->activeOrder->unique_id,
-				]);
+            } else if ($hour->type == 'regular') {
+                $order->orderItems()->create([
+                    'product_uuid' => $order->orderItems()->first()->product_uuid,
+                    'quantity' => 1,
+                    'price' => $hour->price,
+                    'active_order_unique_id' => $order->activeOrder->unique_id,
+                    'hour' => $hour->hour,
+                ]);
                 $order->activeOrder()->update([
                     'hour' => $order->activeOrder->hour + $hour->hour,
                     'is_active' => true,
                     'started_at' => $order->activeOrder->started_at,
                     'end_at' => $order->activeOrder->end_at->addHours($hour->hour),
                 ]);
-            }else{
+            } else {
                 return redirect()->back()->with('error', 'Something went wrong');
             }
 
