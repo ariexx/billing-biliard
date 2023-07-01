@@ -2,7 +2,7 @@
     <div class="row">
         <h3><b>Meja Aktif</b></h3>
         @foreach ($activeOrder as $order)
-            @if (!$order->end_at->isPast() && $order->hour < 100)
+            @if (!$order->end_at->isPast() && $order->is_active && $order->end_at->year == now()->year)
                 <div class="col-md-4 mb-3">
                     <div class="card">
                         <div class="card-body">
@@ -27,7 +27,7 @@
                         </div>
                     </div>
                 </div>
-            @elseif($order->hour > 100)
+            @elseif($order->hour > 100 && $order->end_at->year > now()->year && $order->is_active)
                 <div class="col-md-4 mb-3">
                     <div class="card">
                         <div class="card-body">
