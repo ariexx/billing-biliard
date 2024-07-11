@@ -57,10 +57,22 @@ class HomeController extends Controller
         $orderItems = OrderItem::query()?->whereDate('created_at', today())->whereHas('product', function ($query) {
             $query->where('type', 'drink');
         })->get();
+
+        //get drink name and total of drink order
+        $drinkAndTotal = $orderItems->groupBy('product_uuid')->map(function ($item) {
+            return [
+                'name' => $item->first()->product->name,
+                'total' => $item->count()
+            ];
+        });
+
+//        dd($drinkAndTotal);
+
         return $table->render('livewire.order-history-drinks', [
             'totalOrder' => $totalOrder,
             'totalIncome' => $totalIncome,
-            'orderItems' => $orderItems
+            'orderItems' => $orderItems,
+            'drinkAndTotal' => $drinkAndTotal
         ]);
     }
 }
