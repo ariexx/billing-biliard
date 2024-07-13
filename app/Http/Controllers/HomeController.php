@@ -66,7 +66,7 @@ class HomeController extends Controller
             ];
         });
 
-//        dd($drinkAndTotal);
+        //        dd($drinkAndTotal);
 
         return $table->render('livewire.order-history-drinks', [
             'totalOrder' => $totalOrder,
