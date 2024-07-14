@@ -57,4 +57,26 @@ class Product extends Model
     {
         return $this->hasOne(ActiveOrder::class);
     }
+
+    public function activeOrder(): HasOne
+    {
+        return $this->hasOne(ActiveOrder::class);
+    }
+
+    public function scopeBilliard($query)
+    {
+        return $query->where('type', 'billiard');
+    }
+
+    public function scopeDrink($query)
+    {
+        return $query->where('type', 'drink');
+    }
+
+    public function getActiveOrderBilliardAttribute()
+    {
+        return $this->activeOrder()->where('is_active', true)->whereHas('product', function ($query) {
+            $query->where('type', 'billiard');
+        })->first();
+    }
 }

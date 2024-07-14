@@ -38,6 +38,11 @@ Route::group(['middleware' => 'auth'], function () {
         ->name('order.edit');
     //    Route::put('/order/{uuid}/update', [\App\Http\Controllers\OrderController::class, 'update'])
     //        ->name('order.update');
+    Route::get('/order/{uuid}/pindah-meja', [\App\Http\Controllers\OrderController::class, 'pindahMeja'])
+        ->name('order.pindah-meja');
+
+    Route::put('/order/{uuid}/pindah-meja', [\App\Http\Controllers\OrderController::class, 'pindahMejaPost'])
+        ->name('order.pindah-meja');
 
     //order item
     Route::put('/order-item/{orderUuid}/update', [\App\Http\Controllers\OrderItemController::class, 'update'])

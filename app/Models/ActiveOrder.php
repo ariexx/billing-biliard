@@ -58,4 +58,10 @@ class ActiveOrder extends Pivot
     {
         return $this->belongsTo(Product::class);
     }
+
+    //get active order where is_active is true
+    public static function getActiveOrderProductUuid(): array
+    {
+        return self::where('is_active', true)->pluck('product_uuid')->toArray();
+    }
 }

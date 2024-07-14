@@ -21,6 +21,8 @@
                     <div class="col-lg-6 mb-3">
                         <a class="btn btn-success" href="{{route('order-item.edit', $order->uuid)}}"><i
                                 class="fa fa-plus"></i> Tambah Item</a>
+                        <a class="btn btn-warning" href="{{route('order.pindah-meja', $order->uuid)}}"><i
+                                class="fa fa-info"></i> Pindah Meja</a>
                     </div>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">Order Number : {{$order->order_number}}</li>
