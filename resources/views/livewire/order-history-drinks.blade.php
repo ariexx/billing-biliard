@@ -65,16 +65,6 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header">
-                    <h3>Chart Minuman</h3>
-                </div>
-                <div class="card-body">
-                    <canvas id="drink-chart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
                     <h3>Total Penjualan Minuman</h3>
                 </div>
                 <div class="card-body">
@@ -88,8 +78,8 @@
                         <tbody>
                             @foreach ($drinkAndTotal as $item => $value)
                             <tr>
-                                <td>{{ $value['name'] }}</td>
-                                <td>{{ $value['total'] }}</td>
+                                <td>{{ $item }}</td>
+                                <td>{{ $value }}</td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -106,32 +96,6 @@
 <script>
     $(document).ready(function () {
         $('#order-history-drinks').DataTable();
-    });
-</script>
-
-
-<script>
-    const ctx = document.getElementById('drink-chart');
-
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: [{!! $drinkAndTotal->pluck('name')->map(function($name) {
-                return "'$name'";
-            })->implode(',') !!}],
-            datasets: [{
-                label: 'Total Penjualan Minuman',
-                data: {{$drinkAndTotal->pluck('total')}},
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
     });
 </script>
 @endpush

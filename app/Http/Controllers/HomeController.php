@@ -58,15 +58,16 @@ class HomeController extends Controller
             $query->where('type', 'drink');
         })->get();
 
-        //get drink name and total of drink order
-        $drinkAndTotal = $orderItems->groupBy('product_uuid')->map(function ($item) {
-            return [
-                'name' => $item->first()->product->name,
-                'total' => $item->count()
-            ];
-        });
+        //get quantity of each drink
+        $drinkAndTotal = [];
+        foreach ($orderItems as $orderItem) {
+            if (array_key_exists($orderItem->product->name, $drinkAndTotal)) {
+                $drinkAndTotal[$orderItem->product->name] += $orderItem->quantity;
+            } else {
+                $drinkAndTotal[$orderItem->product->name] = $orderItem->quantity;
+            }
+        }
 
-        //        dd($drinkAndTotal);
 
         return $table->render('livewire.order-history-drinks', [
             'totalOrder' => $totalOrder,
