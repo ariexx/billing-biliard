@@ -51,7 +51,7 @@ class OrderItemController extends Controller
                     'hour' => $hour->hour,
                     'is_active' => 1,
                     'started_at' => now(),
-                    'end_at' => now()->addHours($hour->hour),
+                    'end_at' => $order->activeOrder->end_at->addHours($hour->hour),
                 ]);
 
                 $order->orderItems()->create([
