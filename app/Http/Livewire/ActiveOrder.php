@@ -60,6 +60,7 @@ class ActiveOrder extends Component
 
         $activeOrder->update([
             'is_active' => false,
+            'end_at' => now()
         ]);
 
         $this->alert('success', 'Aksi berhasil');
