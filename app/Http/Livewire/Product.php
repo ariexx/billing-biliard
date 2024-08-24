@@ -14,8 +14,7 @@ class Product extends Component
 {
     use LivewireAlert;
 
-    public $selectedHour;
-    public $hourUuid;
+    public $selectedHours = [];
 
     public function render()
     {
@@ -24,12 +23,12 @@ class Product extends Component
         return view('livewire.product', compact('billiardProducts'));
     }
 
-    public function updatedSelectedHour($hourId)
+    public function updatedSelectedHour($productId, $hourId)
     {
-        $this->hourUuid = Hour::find($hourId)?->uuid;
+        $this->selectedHours[$productId] = $hourId;
     }
 
-    public function saveOrder($productId, $hoursId)
+    public function saveOrder($productId)
     {
         $payment = Payment::first()->uuid;
 
@@ -38,26 +37,25 @@ class Product extends Component
             return;
         }
 
-        //check if there is an active order
+        // Check if there is an active order
         $activeOrder = ActiveOrder::whereProductUuid($productId)->whereIsActive(true)->first();
         if ($activeOrder) {
             $this->alert('error', 'Meja yang dipilih sedang digunakan!');
             return;
         }
 
-        if (!$this->hourUuid) {
-            $this->alert('error', 'Please select a time');
+        if (empty($this->selectedHours[$productId])) {
+            $this->alert('error', 'Please select hours!');
             return;
         }
 
         $product = ProductModel::find($productId);
-
         if (!$product) {
             $this->alert('error', 'Product not found');
             return;
         }
 
-        $hour = Hour::find($hoursId);
+        $hour = Hour::find($this->selectedHours[$productId]);
         if (!$hour) {
             $this->alert('error', 'Hour not found');
             return;
@@ -84,16 +82,10 @@ class Product extends Component
             'hour' => $hour->hour,
             'active_order_unique_id' => $activeOrder->unique_id,
         ]);
-        //        $saveToOrderItem = $order->orderItems()->create([
-        //            'product_uuid' => $product->uuid,
-        //            'hour_uuid' => $hoursId,
-        //            'quantity' => 1,
-        //            'price' => $hour->price,
-        //        ]);
 
         if ($saveToOrderItem) {
             $this->alert('success', 'Order has been saved!');
-            //reset form after success
+            // Reset form after success
             $this->resetForm();
         } else {
             $this->alert('error', 'Something went wrong!');
@@ -101,10 +93,9 @@ class Product extends Component
         }
     }
 
-    //for resetting form
+    // For resetting form
     public function resetForm()
     {
-        $this->selectedHour = null;
-        $this->hourUuid = null;
+        $this->selectedHours = [];
     }
 }
