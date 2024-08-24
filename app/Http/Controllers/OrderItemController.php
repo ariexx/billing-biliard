@@ -12,13 +12,9 @@ class OrderItemController extends Controller
 
     public function update($uuid, \Illuminate\Http\Request $request)
     {
-        $only = $request->only([
-            'product',
-            'hour',
-            'quantity',
-        ]);
-        // Validate the request
-        $validator = \Validator::make($only, [
+        $data = $request->only(['product', 'hour', 'quantity']);
+
+        $validator = \Validator::make($data, [
             'product' => 'array',
             'product.*' => 'nullable|exists:products,uuid',
             'hour' => 'nullable|exists:hours,uuid',
@@ -30,45 +26,50 @@ class OrderItemController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        if ($only['product']['0'] != null) {
-            $product = Product::whereIn('uuid', $only['product'])->get();
-            $order = Order::whereUuid($uuid)->first();
-            foreach ($product as $item => $value) {
+        $order = Order::whereUuid($uuid)->firstOrFail();
+
+        if (!empty($data['product'][0])) {
+            $products = Product::whereIn('uuid', $data['product'])->get();
+            foreach ($products as $index => $product) {
                 $order->orderItems()->create([
-                    'product_uuid' => $value->uuid,
-                    'quantity' => $only['quantity'][$item],
-                    'price' => $value->price * $only['quantity'][$item],
+                    'product_uuid' => $product->uuid,
+                    'quantity' => $data['quantity'][$index],
+                    'price' => $product->price * $data['quantity'][$index],
                 ]);
             }
         }
 
-        if (!empty($only['hour'])) {
-            $hour = Hour::whereUuid($only['hour'])->firstOrFail();
-            $order = Order::whereUuid($uuid)->firstOrFail();
+        if (!empty($data['hour'])) {
+            $hour = Hour::whereUuid($data['hour'])->firstOrFail();
+            $productUuid = $order->orderItems()->first()->product_uuid;
+
             if ($hour->type == 'free time') {
                 $activeOrder = $order->activeOrder()->create([
-                    'product_uuid' => $order->orderItems()->first()->product_uuid,
+                    'product_uuid' => $productUuid,
                     'hour' => $hour->hour,
                     'is_active' => 1,
                     'started_at' => now(),
-                    'end_at' => $order->activeOrder->end_at->addHours($hour->hour),
+                    'end_at' => now()->addHours($hour->hour),
+                    'hour_type' => $hour->type,
                 ]);
 
                 $order->orderItems()->create([
-                    'product_uuid' => $order->orderItems()->first()->product_uuid,
+                    'product_uuid' => $productUuid,
                     'active_order_unique_id' => $activeOrder->unique_id,
                     'quantity' => 1,
                     'price' => $hour->price,
                     'hour' => $hour->hour,
                 ]);
-            } else if ($hour->type == 'regular') {
+            } elseif ($hour->type == 'regular') {
                 $order->orderItems()->create([
-                    'product_uuid' => $order->orderItems()->first()->product_uuid,
+                    'product_uuid' => $productUuid,
                     'quantity' => 1,
                     'price' => $hour->price,
                     'active_order_unique_id' => $order->activeOrder->unique_id,
                     'hour' => $hour->hour,
+                    'hour_type' => $hour->type,
                 ]);
+
                 $order->activeOrder()->update([
                     'hour' => $order->activeOrder->hour + $hour->hour,
                     'is_active' => true,

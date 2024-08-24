@@ -72,6 +72,7 @@ class Product extends Component
             'is_active' => true,
             'started_at' => now(),
             'end_at' => now()->addHours($hour->hour),
+            'hour_type' => $hour->type,
         ]);
 
         $saveToOrderItem = $activeOrder->orderItem()->create([

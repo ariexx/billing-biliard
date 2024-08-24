@@ -21,7 +21,8 @@ class ActiveOrder extends Pivot
         'unique_id',
         'is_active',
         'started_at',
-        'end_at'
+        'end_at',
+        'hour_type'
     ];
 
     protected $casts = [
