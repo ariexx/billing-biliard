@@ -26,6 +26,24 @@ class OrderItemController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
+        //if time is not finished yet and user want to add free time, then return back with error
+        if (!empty($data['hour'])) {
+            $hour = Hour::whereUuid($data['hour'])->firstOrFail();
+            $order = Order::whereUuid($uuid)->firstOrFail();
+            if ($hour->type == 'free time' && $order->activeOrder->end_at > now()) {
+                return redirect()->back()->with('error', 'Waktu belum habis');
+            }
+        }
+
+        //if time is free time then user want to add regular time, then return back with error
+        if (!empty($data['hour'])) {
+            $hour = Hour::whereUuid($data['hour'])->firstOrFail();
+            $order = Order::whereUuid($uuid)->firstOrFail();
+            if ($hour->type == 'regular' && $order->activeOrder->hour_type == 'free time') {
+                return redirect()->back()->with('error', 'Main bebas belum habis');
+            }
+        }
+
         $order = Order::whereUuid($uuid)->firstOrFail();
 
         if (!empty($data['product'][0])) {
@@ -43,42 +61,33 @@ class OrderItemController extends Controller
             $hour = Hour::whereUuid($data['hour'])->firstOrFail();
             $productUuid = $order->orderItems()->first()->product_uuid;
 
+            $activeOrderData = [
+                'product_uuid' => $productUuid,
+                'hour' => $hour->hour,
+                'is_active' => 1,
+                'started_at' => now(),
+                'end_at' => now()->addHours($hour->hour),
+                'hour_type' => $hour->type,
+            ];
+
             if ($hour->type == 'free time') {
-                $activeOrder = $order->activeOrder()->create([
-                    'product_uuid' => $productUuid,
-                    'hour' => $hour->hour,
-                    'is_active' => 1,
-                    'started_at' => now(),
-                    'end_at' => now()->addHours($hour->hour),
-                    'hour_type' => $hour->type,
-                ]);
-
-                $order->orderItems()->create([
-                    'product_uuid' => $productUuid,
-                    'active_order_unique_id' => $activeOrder->unique_id,
-                    'quantity' => 1,
-                    'price' => $hour->price,
-                    'hour' => $hour->hour,
-                ]);
+                $activeOrder = $order->activeOrder()->create($activeOrderData);
             } elseif ($hour->type == 'regular') {
-                $order->orderItems()->create([
-                    'product_uuid' => $productUuid,
-                    'quantity' => 1,
-                    'price' => $hour->price,
-                    'active_order_unique_id' => $order->activeOrder->unique_id,
-                    'hour' => $hour->hour,
-                    'hour_type' => $hour->type,
-                ]);
-
                 $order->activeOrder()->update([
                     'hour' => $order->activeOrder->hour + $hour->hour,
                     'is_active' => true,
                     'started_at' => $order->activeOrder->started_at,
                     'end_at' => $order->activeOrder->end_at->addHours($hour->hour),
                 ]);
+                $activeOrderData['active_order_unique_id'] = $order->activeOrder->unique_id;
             } else {
                 return redirect()->back()->with('error', 'Something went wrong');
             }
+
+            $order->orderItems()->create(array_merge($activeOrderData, [
+                'quantity' => 1,
+                'price' => $hour->price,
+            ]));
 
             return redirect()->route('order.view', $uuid);
         }

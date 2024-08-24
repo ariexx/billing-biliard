@@ -8,11 +8,15 @@
                 <h5 class="card-header">Order Item</h5>
                 <div class="card-body">
                     @if (session()->has('errors'))
-                    @foreach ($errors->all() as $error)
-                    <div class="alert alert-danger">
-                        {{ $error }}
-                    </div>
-                    @endforeach
+                        @foreach ($errors->all() as $error)
+                        <div class="alert alert-danger">
+                            {{ $error }}
+                        </div>
+                        @endforeach
+                    @elseif(session()->has('error'))
+                        <div class="alert alert-danger">
+                            {{ session('error') }}
+                        </div>
                     @endif
                     <form class="row g-3" action="{{ route('order-item.update', $order->uuid) }}" method="POST">
                         @csrf
