@@ -19,7 +19,7 @@ return [
     | Typically printer name or IP address.
     |
     */
-    'connector_descriptor' => 'POS-58',
+    'connector_descriptor' => env('PRINTER'),
     /*
     |--------------------------------------------------------------------------
     | Printer port
@@ -29,4 +29,6 @@ return [
     |
     */
     'connector_port' => 9100,
+
+    'paper_size' => env('RECEIPTPRINTER_PAPER_SIZE', '80mm'), // Add this line
 ];

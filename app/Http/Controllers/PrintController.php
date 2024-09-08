@@ -8,51 +8,46 @@ use Illuminate\Http\Request;
 
 class PrintController extends Controller
 {
+    private function formatText($text) {
+        $paperSize = config('receiptprinter.paper_size');
+        $maxWidth = $paperSize === '58mm' ? 32 : 42; // Set max width based on paper size
+        $lines = explode("\n", wordwrap($text, $maxWidth, "\n", true));
+        return implode("\n", $lines);
+    }
+
     public function __invoke(Request $request)
     {
-        $only = $request->only([
-            'order_uuid'
-        ]);
-
+        $only = $request->only(['order_uuid']);
         $order = Order::findOrFail($only['order_uuid']);
 
         try {
-            // Set params
             $mid = null;
             $store_name = 'Black Dragon Pool';
             $store_address = 'Jalan Kapten Pattimura No.93, Lubuk Pakam';
             $store_phone = null;
             $store_email = null;
             $store_website = null;
-            //            $tax_percentage = 10;
             $transaction_id = $order->order_number;
             $currency = 'Rp';
-            //            $image_path = 'logo.png';
 
-            // Set items
             $items = [];
             foreach ($order->orderItems as $item) {
                 $items[] = [
-                    'name' => $item->product->name . ' - ' . $item?->hour . ' Jam',
+                    'name' => $this->formatText($item->product->name . ' - ' . $item?->hour . ' Jam'),
                     'qty' => $item->quantity,
                     'price' => $item->product->type == 'Billiard' ? $item->price : $item->product->price,
                 ];
             }
 
-            // Init printer
             $printer = new ReceiptPrinter;
             $printer->init(
                 config('receiptprinter.connector_type'),
                 config('receiptprinter.connector_descriptor')
             );
 
-            // Set store info
-            $printer->setStore($mid, $store_name, $store_address, $store_phone, $store_email, $store_website);
-
-            // Set currency
+            $printer->setStore($mid, $this->formatText($store_name), $this->formatText($store_address), $store_phone, $store_email, $store_website);
             $printer->setCurrency($currency);
 
-            // Add items
             foreach ($items as $item) {
                 $printer->addItem(
                     $item['name'],
@@ -61,32 +56,12 @@ class PrintController extends Controller
                 );
             }
 
-            // Set tax
-            //            $printer->setTax($tax_percentage);
-
-            // Calculate total
             $printer->calculateSubTotal();
             $printer->calculateGrandTotal();
-
-            // Set transaction ID
             $printer->setTransactionID($transaction_id);
-
-            // Set logo
-            // Uncomment the line below if $image_path is defined
-            //$printer->setLogo($image_path);
-
-            // Set QR code
-            //            $printer->setQRcode([
-            //                'tid' => $transaction_id,
-            //            ]);
-
-            // Print receipt
             $printer->printReceipt();
 
-            //Log how many times the receipt is printed
-            $order->update([
-                'print_count' => $order->print_count + 1
-            ]);
+            $order->update(['print_count' => $order->print_count + 1]);
 
             \Log::channel('daily')->info("Print Success: Order Number : {$order->order_number} - Total Print : {$order->print_count} - Printed At : " . now()->format("Y-m-d H:i:s") . " - Printed By : " . auth()->user()->name);
 
