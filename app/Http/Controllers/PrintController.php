@@ -8,11 +8,21 @@ use Illuminate\Http\Request;
 
 class PrintController extends Controller
 {
-    private function formatText($text) {
+    private function formatText($text, $isItem = false) {
         $paperSize = config('receiptprinter.paper_size');
         $maxWidth = $paperSize === '58mm' ? 32 : 42; // Set max width based on paper size
+        if ($isItem && $paperSize === '80mm') {
+            $maxWidth = 48; // Increase width for items on 80mm paper
+        }
         $lines = explode("\n", wordwrap($text, $maxWidth, "\n", true));
         return implode("\n", $lines);
+    }
+
+    private function addItemWithAlignment($printer, $name, $qty, $price) {
+        $paperSize = config('receiptprinter.paper_size');
+        $maxWidth = $paperSize === '58mm' ? 32 : 42; // Set max width based on paper size
+        $name = str_pad($name, $maxWidth, ' ', STR_PAD_BOTH); // Center align the name
+        $printer->addItem($name, $qty, $price);
     }
 
     public function __invoke(Request $request)
@@ -33,7 +43,7 @@ class PrintController extends Controller
             $items = [];
             foreach ($order->orderItems as $item) {
                 $items[] = [
-                    'name' => $this->formatText($item->product->name . ' - ' . $item?->hour . ' Jam'),
+                    'name' => $this->formatText($item->product->name . ' - ' . $item?->hour . ' Jam', true),
                     'qty' => $item->quantity,
                     'price' => $item->product->type == 'Billiard' ? $item->price : $item->product->price,
                 ];
@@ -49,11 +59,7 @@ class PrintController extends Controller
             $printer->setCurrency($currency);
 
             foreach ($items as $item) {
-                $printer->addItem(
-                    $item['name'],
-                    $item['qty'],
-                    $item['price']
-                );
+                $this->addItemWithAlignment($printer, $item['name'], $item['qty'], $item['price']);
             }
 
             $printer->calculateSubTotal();
