@@ -43,7 +43,7 @@ class PrintController extends Controller
             $items = [];
             foreach ($order->orderItems as $item) {
                 $items[] = [
-                    'name' => $this->formatText($item->product->name . ' - ' . $item?->hour . ' Jam', true),
+                    'name' => $item->product->name . ' - ' . $item?->hour . ' Jam',
                     'qty' => $item->quantity,
                     'price' => $item->product->type == 'Billiard' ? $item->price : $item->product->price,
                 ];
