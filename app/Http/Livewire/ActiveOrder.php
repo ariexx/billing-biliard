@@ -50,10 +50,9 @@ class ActiveOrder extends Component
         }
     }
 
-    public function habiskanWaktu($orderUuid, $uniqueUuid)
+    public function habiskanWaktu($uniqueUuid)
     {
-        $activeOrder = ModelsActiveOrder::where('order_uuid', $orderUuid)
-            ->where('unique_id', $uniqueUuid)
+        $activeOrder = ModelsActiveOrder::where('unique_id', $uniqueUuid)
             ->first();
         if (!$activeOrder) {
             $this->alert('error', 'Order tidak ditemukan');
