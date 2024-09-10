@@ -20,7 +20,7 @@
                                     Lihat Detail Order
                                 </a>
                             </p>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="habiskanWaktu('{{ $order->unique_id }}')">
+                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="habiskanWaktu('{{ $order->order_uuid }}')">
                                 Habiskan
                             </button>
                         </div>
@@ -44,7 +44,7 @@
                                     Lihat Detail Order
                                 </a>
                             </p>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="stopTimer('{{ $order->unique_id }}')">
+                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="stopTimer('{{ $order->order_uuid }}')">
                                 Selesai
                             </button>
                         </div>
