@@ -23,12 +23,12 @@ class ActiveOrder extends Component
         return view('livewire.active-order', compact('activeOrder'));
     }
 
-    public function stopTimer($orderUuid)
+    public function stopTimer($orderUuid, $uniqueUuid)
     {
         \DB::beginTransaction();
         try {
 
-            $order = ModelsActiveOrder::whereOrderUuid($orderUuid)->firstOrFail();
+            $order = ModelsActiveOrder::whereOrderUuid($orderUuid)->whereUniqueId($uniqueUuid)->firstOrFail();
             $orderItem = OrderItem::whereOrderUuid($orderUuid)->firstOrFail();
             $calculatePrice = $order->updated_at->diffInMinutes(now()) * $orderItem->price;
 
@@ -50,9 +50,11 @@ class ActiveOrder extends Component
         }
     }
 
-    public function habiskanWaktu($orderUuid)
+    public function habiskanWaktu($orderUuid, $uniqueUuid)
     {
-        $activeOrder = ModelsActiveOrder::where('order_uuid', $orderUuid)->first();
+        $activeOrder = ModelsActiveOrder::where('order_uuid', $orderUuid)
+            ->where('unique_id', $uniqueUuid)
+            ->first();
         if (!$activeOrder) {
             $this->alert('error', 'Order tidak ditemukan');
             return;
