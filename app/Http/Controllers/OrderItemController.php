@@ -26,7 +26,6 @@ class OrderItemController extends Controller
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        //if time is not finished yet and user want to add free time, then return back with error
         if (!empty($data['hour'])) {
             $hour = Hour::whereUuid($data['hour'])->firstOrFail();
             $order = Order::whereUuid($uuid)->firstOrFail();
@@ -35,7 +34,6 @@ class OrderItemController extends Controller
             }
         }
 
-        //if time is free time then user want to add regular time, then return back with error
         if (!empty($data['hour'])) {
             $hour = Hour::whereUuid($data['hour'])->firstOrFail();
             $order = Order::whereUuid($uuid)->firstOrFail();
@@ -72,6 +70,7 @@ class OrderItemController extends Controller
 
             if ($hour->type == 'free time') {
                 $activeOrder = $order->activeOrder()->create($activeOrderData);
+                $activeOrderData['active_order_unique_id'] = $activeOrder->unique_id;
             } elseif ($hour->type == 'regular') {
                 $order->activeOrder()->update([
                     'hour' => $order->activeOrder->hour + $hour->hour,

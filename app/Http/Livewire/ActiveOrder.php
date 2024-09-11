@@ -27,24 +27,27 @@ class ActiveOrder extends Component
     {
         \DB::beginTransaction();
         try {
-
-            $order = ModelsActiveOrder::whereOrderUuid($orderUuid)->whereUniqueId($uniqueUuid)->firstOrFail();
-            $orderItem = OrderItem::whereOrderUuid($orderUuid)->firstOrFail();
-            $calculatePrice = $order->updated_at->diffInMinutes(now()) * $orderItem->price;
+            $order = ModelsActiveOrder::where('order_uuid', $orderUuid)
+                ->where('unique_id', $uniqueUuid)
+                ->firstOrFail();
+            $orderItem = OrderItem::where('order_uuid', $orderUuid)
+                ->where('active_order_unique_id', $uniqueUuid)
+                ->firstOrFail();
+            $timePlayed = $order->started_at->diffInMinutes(now());
+            $calculatePrice = $timePlayed * $orderItem->price;
 
             $order->update([
                 'is_active' => false,
                 'end_at' => now()
             ]);
 
-            //Update the price in order_items
             $orderItem->update([
                 'price' => $calculatePrice,
             ]);
 
-            $this->alert('success', 'Order Selesai');
             \DB::commit();
-        }catch (\Exception $e) {
+            $this->alert('success', 'Order Selesai');
+        } catch (\Exception $e) {
             \DB::rollBack();
             $this->alert('error', 'Order tidak ditemukan');
         }
