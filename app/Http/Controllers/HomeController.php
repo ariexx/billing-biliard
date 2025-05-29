@@ -29,13 +29,29 @@ class HomeController extends Controller
 
     public function orderHistory(OrdersDataTable $table)
     {
-        $totalOrder = auth()?->user()?->orders()?->whereDate('created_at', today())?->count();
-        //get total income this day
-        $totalIncome = OrderItem::query()?->whereDate('created_at', today())?->whereHas('product', function ($query) {
-            $query->where('type', 'billiard');
-        })->whereHas('order', function ($query) {
-            $query->where('user_uuid', auth()->id());
-        })->sum('price');
+        // Get the authenticated user ID once
+        $userId = auth()->id();
+
+        // Use a single query with joins instead of nested whereHas
+        $totalIncome = OrderItem::query()
+            ->join('products', 'order_items.product_uuid', '=', 'products.uuid')
+            ->join('orders', 'order_items.order_uuid', '=', 'orders.uuid')
+            ->whereDate('order_items.created_at', today())
+            ->where('products.type', 'billiard')
+            ->where('orders.user_uuid', $userId)
+            ->sum('order_items.price');
+
+        // Get count more efficiently
+        $totalOrder = \DB::table('orders')
+            ->where('user_uuid', $userId)
+            ->whereDate('created_at', today())
+            ->count();
+
+        // Consider adding cache for frequently accessed data
+        // Cache::remember('order_history_'.$userId, now()->addMinutes(5), function() use ($totalOrder, $totalIncome) {
+        //     return ['totalOrder' => $totalOrder, 'totalIncome' => $totalIncome];
+        // });
+
         return $table->render('livewire.order-history', [
             'totalOrder' => $totalOrder,
             'totalIncome' => $totalIncome
@@ -44,30 +60,36 @@ class HomeController extends Controller
 
     public function orderHistoryDrinks(OrdersDataTable $table)
     {
-        //get total order type of drink
-        $totalOrder = OrderItem::query()?->whereDate('created_at', today())->whereHas('product', function ($query) {
-            $query->where('type', 'drink');
-        })->count();
-        //get total income this day
-        //get total income by type of drink
-        $totalIncome = OrderItem::query()?->whereDate('created_at', today())->whereHas('product', function ($query) {
-            $query->where('type', 'drink');
-        })->sum('price');
+        // Base query for drink items with proper joins
+        $baseQuery = OrderItem::query()
+            ->join('products', 'order_items.product_uuid', '=', 'products.uuid')
+            ->whereDate('order_items.created_at', today())
+            ->where('products.type', 'drink');
 
-        $orderItems = OrderItem::query()?->whereDate('created_at', today())->whereHas('product', function ($query) {
-            $query->where('type', 'drink');
-        })->get();
+        // Get counts and totals in a more efficient way
+        $totalOrder = (clone $baseQuery)->count();
+        $totalIncome = (clone $baseQuery)->sum('order_items.price');
 
-        //get quantity of each drink
-        $drinkAndTotal = [];
-        foreach ($orderItems as $orderItem) {
-            if (array_key_exists($orderItem->product->name, $drinkAndTotal)) {
-                $drinkAndTotal[$orderItem->product->name] += $orderItem->quantity;
-            } else {
-                $drinkAndTotal[$orderItem->product->name] = $orderItem->quantity;
-            }
-        }
+        // Get drink quantities grouped by product name - doing this in SQL is much faster
+        $drinkAndTotal = \DB::table('order_items')
+            ->join('products', 'order_items.product_uuid', '=', 'products.uuid')
+            ->select('products.name', \DB::raw('SUM(order_items.quantity) as total_quantity'))
+            ->whereDate('order_items.created_at', today())
+            ->where('products.type', 'drink')
+            ->groupBy('products.name')
+            ->pluck('total_quantity', 'name')
+            ->toArray();
 
+        // We still need the order items for other display purposes
+        $orderItems = (clone $baseQuery)
+            ->with('product') // Eager load product to prevent N+1 problem
+            ->get();
+
+        // Optional caching if needed:
+        // $cacheKey = 'drink_history_' . today()->format('Y-m-d');
+        // $data = Cache::remember($cacheKey, now()->addHours(1), function() use ($totalOrder, $totalIncome, $orderItems, $drinkAndTotal) {
+        //     return compact('totalOrder', 'totalIncome', 'orderItems', 'drinkAndTotal');
+        // });
 
         return $table->render('livewire.order-history-drinks', [
             'totalOrder' => $totalOrder,
