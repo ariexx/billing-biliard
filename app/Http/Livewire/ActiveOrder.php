@@ -23,36 +23,40 @@ class ActiveOrder extends Component
         return view('livewire.active-order', compact('activeOrder'));
     }
 
-    public function stopTimer($uniqueId)
+    public function stopTimer($orderUuid, $uniqueUuid)
     {
         \DB::beginTransaction();
         try {
-
-            $order = ModelsActiveOrder::whereUniqueId($uniqueId)->firstOrFail();
-            $orderItem = OrderItem::whereActiveOrderUniqueId($uniqueId)->firstOrFail();
-            $calculatePrice = $order->updated_at->diffInMinutes(now()) * $orderItem->price;
+            $order = ModelsActiveOrder::where('order_uuid', $orderUuid)
+                ->where('unique_id', $uniqueUuid)
+                ->firstOrFail();
+            $orderItem = OrderItem::where('order_uuid', $orderUuid)
+                ->where('active_order_unique_id', $uniqueUuid)
+                ->firstOrFail();
+            $timePlayed = $order->started_at->diffInMinutes(now());
+            $calculatePrice = $timePlayed * $orderItem->price;
 
             $order->update([
                 'is_active' => false,
                 'end_at' => now()
             ]);
 
-            //Update the price in order_items
             $orderItem->update([
                 'price' => $calculatePrice,
             ]);
 
-            $this->alert('success', 'Order Selesai');
             \DB::commit();
-        }catch (\Exception $e) {
+            $this->alert('success', 'Order Selesai');
+        } catch (\Exception $e) {
             \DB::rollBack();
             $this->alert('error', 'Order tidak ditemukan');
         }
     }
 
-    public function habiskanWaktu($uniqueId)
+    public function habiskanWaktu($uniqueUuid)
     {
-        $activeOrder = ModelsActiveOrder::where('unique_id', $uniqueId)->first();
+        $activeOrder = ModelsActiveOrder::where('unique_id', $uniqueUuid)
+            ->first();
         if (!$activeOrder) {
             $this->alert('error', 'Order tidak ditemukan');
             return;
