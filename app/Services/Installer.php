@@ -200,7 +200,15 @@ class Installer
 
         // APP_KEY hanya dibuat kalau belum ada: menggantinya akan membuat seluruh
         // session dan cookie lama tidak bisa didekripsi.
-        if (! preg_match('/^APP_KEY=.+$/m', $isi)) {
+        //
+        // Nilainya diperiksa setelah trim, BUKAN dengan /^APP_KEY=.+$/m. Berkas
+        // .env di Windows berakhiran CRLF, sehingga baris kosong "APP_KEY=" jadi
+        // "APP_KEY=\r" -- dan `.` cocok dengan \r, membuat kunci kosong dikira
+        // sudah terisi sehingga aplikasi tidak pernah dapat APP_KEY.
+        preg_match('/^APP_KEY=(.*)$/m', $isi, $cocok);
+        $sudahAdaKunci = isset($cocok[1]) && trim($cocok[1]) !== '';
+
+        if (! $sudahAdaKunci) {
             $isi = $this->setEnvKey($isi, 'APP_KEY', 'base64:'.base64_encode(random_bytes(32)));
         }
 

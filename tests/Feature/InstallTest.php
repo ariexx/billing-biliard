@@ -270,6 +270,41 @@ DB_DATABASE=x
     }
 
     /** @test */
+    public function app_key_kosong_bergaya_windows_tetap_dibuatkan(): void
+    {
+        // .env di Windows berakhiran CRLF, sehingga baris kosong "APP_KEY="
+        // terbaca sebagai "APP_KEY=" + CR. Pola /^APP_KEY=.+$/m menganggap CR itu
+        // isi, jadi kunci kosong dikira sudah terisi dan aplikasi tidak pernah
+        // mendapat APP_KEY. CRLF disusun lewat chr() supaya test ini tidak
+        // bergantung pada akhiran baris berkas sumbernya sendiri.
+        $crlf = chr(13).chr(10);
+        $tmp = tempnam(sys_get_temp_dir(), 'env');
+        file_put_contents($tmp, 'APP_KEY='.$crlf.'DB_DATABASE=x'.$crlf);
+
+        (new Installer())->useEnvPath($tmp)->writeEnv($this->dataValid());
+
+        $this->assertMatchesRegularExpression('/^APP_KEY=base64:.+$/m', file_get_contents($tmp));
+
+        @unlink($tmp);
+        foreach (glob($tmp.'.backup-*') as $b) { @unlink($b); }
+    }
+
+    /** @test */
+    public function app_key_yang_sudah_ada_tidak_diganti_walau_berakhiran_crlf(): void
+    {
+        $crlf = chr(13).chr(10);
+        $tmp = tempnam(sys_get_temp_dir(), 'env');
+        file_put_contents($tmp, 'APP_KEY=base64:KUNCILAMA='.$crlf.'DB_DATABASE=x'.$crlf);
+
+        (new Installer())->useEnvPath($tmp)->writeEnv($this->dataValid());
+
+        $this->assertStringContainsString('APP_KEY=base64:KUNCILAMA=', file_get_contents($tmp));
+
+        @unlink($tmp);
+        foreach (glob($tmp.'.backup-*') as $b) { @unlink($b); }
+    }
+
+    /** @test */
     public function nilai_env_berspasi_dikutip_supaya_terbaca_utuh(): void
     {
         $tmp = tempnam(sys_get_temp_dir(), 'env');
