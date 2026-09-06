@@ -23,7 +23,14 @@ class Product extends Component
             ->orderBy('created_at', 'asc')
             ->get();
 
-        return view('livewire.product', compact('billiardProducts'));
+        // Dipakai view untuk menandai meja terpakai dan mematikan tombol Order,
+        // supaya kasir tidak mengklik meja yang pasti ditolak.
+        $sesiPerMeja = ActiveOrder::with('order')
+            ->where('is_active', true)
+            ->get()
+            ->keyBy('product_uuid');
+
+        return view('livewire.product', compact('billiardProducts', 'sesiPerMeja'));
     }
 
     public function saveOrder($productId)

@@ -47,18 +47,16 @@
                     <ul class="navbar-nav me-auto">
                         @if (auth()->user())
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('home') }}">Home</a>
+                            <a class="nav-link" href="{{ route('home') }}">Meja</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                                 data-bs-toggle="dropdown" aria-expanded="false">
-                                Order History
+                                Riwayat
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                <li><a class="dropdown-item" href="{{ route('order-history') }}">History
-                                        Billiard</a></li>
-                                <li><a class="dropdown-item" href="{{ route('order-history.drinks') }}">History
-                                        Minuman</a></li>
+                                <li><a class="dropdown-item" href="{{ route('order-history') }}">Riwayat Biliar</a></li>
+                                <li><a class="dropdown-item" href="{{ route('order-history.drinks') }}">Riwayat Minuman</a></li>
                             </ul>
                         </li>
                         @endif
@@ -89,7 +87,7 @@
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                 <a class="dropdown-item" href="{{ route('logout') }}" onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">
-                                    {{ __('Logout') }}
+                                    Keluar
                                 </a>
 
                                 <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">

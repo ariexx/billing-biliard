@@ -61,7 +61,11 @@ class BackupDatabase extends Command
         return self::SUCCESS;
     }
 
-    private function dump(): string
+    /**
+     * protected supaya test bisa mengganti langkah dump dengan file tiruan dan
+     * menguji jalur upload + prune tanpa perlu server MySQL.
+     */
+    protected function dump(): string
     {
         $dir = storage_path('app/'.config('backup.local_path'));
 

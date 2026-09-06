@@ -6,7 +6,7 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h3>Order Detail</h3>
+                    <h3 class="mb-0">Detail Order</h3>
                 </div>
                 <div class="card-body">
                     @foreach ($errors->all() as $error)
@@ -29,8 +29,8 @@
                                 class="fa fa-info"></i> Pindah Meja</a>
                     </div>
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">Order Number : {{$order->order_number}}</li>
-                        <li class="list-group-item">Cashier : {{$order->user?->name ?? '-'}}</li>
+                        <li class="list-group-item">Nomor Order : <b>{{$order->order_number}}</b></li>
+                        <li class="list-group-item">Kasir : {{$order->user?->name ?? '-'}}</li>
                         <li class="list-group-item">
                             Status :
                             @if($order->is_paid)
@@ -41,17 +41,17 @@
                             @endif
                         </li>
                     </ul>
-                    <table class="table table-bordered text-center">
+                    <div class="table-responsive"><table class="table table-bordered align-middle">
                         <thead>
                             <tr>
-                                <th>Product Name</th>
-                                <th>Product Price</th>
-                                <th>Product Quantity</th>
-                                <th>Hour</th>
-                                <th>Started At</th>
-                                <th>Ended At</th>
+                                <th>Produk</th>
+                                <th>Harga Satuan</th>
+                                <th>Jumlah</th>
+                                <th>Jam</th>
+                                <th>Mulai</th>
+                                <th>Selesai</th>
                                 <!-- <th>Duration</th> -->
-                                <th>Sub Total</th>
+                                <th class="text-end">Sub Total</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -66,7 +66,7 @@
                                 <td>{{$item->hour ?? '-'}}</td>
                                 <td>{{$item->activeOrder->started_at ?? '-'}}</td>
                                 <td>{{$item->activeOrder->end_at ?? '-'}}</td>
-                                <td>{{rupiah($item->price)}}</td>
+                                <td class="text-end">{{rupiah($item->price)}}</td>
                                 <td>
                                     @unless($order->is_paid)
                                     <form action="{{route('order-item.destroy', $item->uuid)}}" method="POST"
@@ -82,7 +82,7 @@
                             </tr>
                             @endforeach
                         </tbody>
-                    </table>
+                    </table></div>
                     <p>
                         <strong>Total: {{rupiah($order->total)}}</strong>
                     </p>
@@ -120,15 +120,27 @@
                             </div>
                         </div>
                     @endunless
-                    @if($order->created_at->diffInDays(now()) < 1 || auth()->user()->role === "admin")
+                    @php
+                        $bisaPrint = $order->created_at->diffInDays(now()) < 1
+                            || auth()->user()->role === 'admin';
+                    @endphp
+                    @if($bisaPrint)
                         <form action="{{route('print')}}" method="POST" target="_blank">
                             @csrf
                             <input type="hidden" name="order_uuid" value="{{$order->uuid}}">
                             <button type="submit" class="btn btn-primary">
-                                <i class="fa fa-print"></i> Print
+                                <i class="fa fa-print"></i> Cetak Struk
+                                @if($order->print_count > 0)
+                                    <span class="badge bg-light text-dark">{{ $order->print_count }}x</span>
+                                @endif
                             </button>
                         </form>
-                        @endif
+                    @else
+                        {{-- Sebelumnya tombolnya hilang begitu saja tanpa penjelasan. --}}
+                        <div class="alert alert-secondary mb-0">
+                            Order ini lebih dari 24 jam, cetak ulang hanya bisa dilakukan admin.
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

@@ -15,7 +15,21 @@ class HomeController extends Controller
 
     public function index()
     {
-        return view('home');
+        // Order yang sesinya sudah selesai tapi belum ditandai lunas. Sebelum ada
+        // ini, order yang belum dibayar tidak muncul di mana pun setelah kartu
+        // mejanya hilang dari dashboard.
+        $belumDibayar = \App\Models\Order::belumLunas()
+            ->with('orderItems.product')
+            ->whereDoesntHave('activeOrders', fn ($query) => $query->where('is_active', true))
+            ->when(
+                auth()->user()?->role !== 'admin',
+                fn ($query) => $query->where('user_uuid', auth()->id())
+            )
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get();
+
+        return view('home', compact('belumDibayar'));
     }
 
     public function orderHistory(OrdersDataTable $table)

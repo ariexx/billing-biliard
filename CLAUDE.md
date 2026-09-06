@@ -71,6 +71,12 @@ Entity roles:
 
 `order_items` and `active_orders` were created **without a PRIMARY KEY**, and `order_items.uuid` has no index at all, even though both models declare `$primaryKey`. Migrations `2026_09_06_1800*` add the keys, backfill `hour_type`, add hot-path indexes, and make `orders.order_number` unique. They **abort with instructions** rather than run if duplicates exist — always `php artisan backup:database && php artisan db:integrity-check` first. The PK and `MODIFY ENUM` statements are MySQL-only and skip on sqlite so the test suite still runs.
 
+### Front-end constraints
+
+**Alpine.js is not loaded anywhere** — not in `resources/js/app.js`, not in `package.json`, not in the built bundle, and Livewire 2 does not bundle it. So `blade-ui-kit`'s `<x-countdown>` (`x-data`/`x-text`) never ticked; it rendered static server values. All time displays on the cashier dashboard are therefore computed server-side and refreshed by the existing `wire:poll.10000ms`. Don't reintroduce Alpine-dependent components without adding Alpine first.
+
+Confirmations on `wire:click` buttons use an inline `onclick` that calls `event.stopImmediatePropagation()` when the user cancels. This is verified in Chrome to block Livewire's handler in both of its listener strategies (same-element and delegated), because attribute handlers are registered at parse time, before Livewire initialises. Livewire 2 has no `wire:confirm`.
+
 ### Gotchas
 
 - **There is no `orders.total` column.** `Order::getTotalAttribute()` is a pure accessor over `orderItems->sum('price')`. It is deliberately absent from `$fillable`; writing it throws `Unknown column 'total'`. Same for `order_items.total`.
