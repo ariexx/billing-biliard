@@ -50,6 +50,17 @@ All figures come from `App\Services\Rekap`, the same class the Filament `Laporan
 
 `TELEGRAM_SEND_BACKUP=true` additionally attaches the `.sql.gz` dump to the same chat after `backup:database` runs (`--telegram` / `--no-telegram` override it per run). Off by default: the dump holds every transaction plus user password hashes, and ordinary Telegram chats are not end-to-end encrypted. A Telegram failure never fails the backup — the local dump and the Drive copy are the real backups.
 
+## Settings page (admin panel)
+
+`App\Filament\Pages\Pengaturan` edits the `.env`-only settings from the panel: backup schedule and retention, Google Drive credentials, Telegram, and printer. It exists because those values were previously reachable only by editing a file on the shop PC — which is exactly what gets forgotten during setup.
+
+Two rules the page depends on:
+
+- **Secrets are never loaded into the form.** Fields show only "sudah terisi" / "BELUM DIISI" as helper text, and an empty field means *leave the stored value alone*. Without that, opening the page and pressing save would silently wipe every token.
+- **Writing goes through `App\Services\EnvWriter`**, shared with the installer. It backs up the old `.env`, preserves keys neither screen knows about, quotes values containing spaces, and never overwrites an existing `APP_KEY`.
+
+Changes take effect immediately: config is not cached, and `schedule:work` spawns `schedule:run` as a fresh process every minute, so the scheduler picks up new backup hours without a restart.
+
 ## Two front ends
 
 - **Cashier UI** — `/home`, Blade + Bootstrap 5 + Livewire, auth via `laravel/ui`. Registration/reset/verify routes are disabled in `routes/web.php`.
