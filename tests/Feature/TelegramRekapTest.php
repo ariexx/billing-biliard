@@ -243,6 +243,10 @@ class TelegramRekapTest extends TestCase
     /** @test */
     public function backup_dikirim_ke_telegram_hanya_kalau_opsinya_aktif(): void
     {
+        // Folder terpisah: menunjuk storage/app/backups lalu mengosongkannya
+        // berarti `php artisan test` menghapus backup sungguhan di mesin kasir.
+        config(['backup.local_path' => 'backups-test']);
+
         $dir = storage_path('app/'.config('backup.local_path'));
         @mkdir($dir, 0755, true);
         foreach (glob($dir.'/*.sql.gz') ?: [] as $f) {

@@ -18,6 +18,12 @@ class BackupTest extends TestCase
     {
         parent::setUp();
 
+        // Folder terpisah dari backup sungguhan. Sebelumnya test ini menunjuk
+        // storage/app/backups lalu mengosongkannya di setUp dan tearDown --
+        // artinya menjalankan `php artisan test` di mesin kasir menghapus semua
+        // backup lokal yang ada.
+        config(['backup.local_path' => 'backups-test']);
+
         $this->dir = storage_path('app/'.config('backup.local_path'));
 
         if (! is_dir($this->dir)) {
