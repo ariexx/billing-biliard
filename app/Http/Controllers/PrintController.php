@@ -9,26 +9,25 @@ class PrintController extends Controller
 {
     public function __invoke(Request $request)
     {
-        $only = $request->only(['order_uuid']);
-        $order = Order::findOrFail($only['order_uuid']);
+        $data = $request->validate([
+            'order_uuid' => 'required|exists:orders,uuid',
+        ]);
 
-        try {
-            // Update print count
-            $order->update(['print_count' => $order->print_count + 1]);
+        $order = Order::with('orderItems.product', 'user')
+            ->where('uuid', $data['order_uuid'])
+            ->firstOrFail();
 
-            // Log printing activity
-            \Log::channel('daily')->info(
-                "Print Success: Order Number : {$order->order_number} - " .
-                "Total Print : {$order->print_count} - " .
-                "Printed At : " . now()->format("Y-m-d H:i:s") . " - " .
-                "Printed By : " . auth()->user()->name
-            );
+        $this->authorize('print', $order);
 
-            // Return the print view
-            return view('order.print-receipt', compact('order'));
+        $order->update(['print_count' => $order->print_count + 1]);
 
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
-        }
+        \Log::channel('daily')->info(
+            "Print Success: Order Number : {$order->order_number} - " .
+            "Total Print : {$order->print_count} - " .
+            "Printed At : " . now()->format("Y-m-d H:i:s") . " - " .
+            "Printed By : " . auth()->user()->name
+        );
+
+        return view('order.print-receipt', compact('order'));
     }
 }

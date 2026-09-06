@@ -42,28 +42,17 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {{-- Sama seperti struk: harga dibaca dari order_items,
+                                 bukan dari products yang harganya bisa berubah. --}}
                             @foreach($order->orderItems as $item)
                             <tr>
-                                <td>{{$item->product->name}}</td>
-                                <td>
-                                    @if($item->product->type === "Billiard")
-                                    {{rupiah($item->price)}}
-                                    @else
-                                    {{rupiah($item->product->price)}}
-                                    @endif
-                                </td>
+                                <td>{{$item->product?->name ?? 'Produk dihapus'}}</td>
+                                <td>{{rupiah((int) round($item->price / max($item->quantity, 1)))}}</td>
                                 <td>{{$item->quantity}}</td>
                                 <td>{{$item->hour ?? '-'}}</td>
                                 <td>{{$item->activeOrder->started_at ?? '-'}}</td>
                                 <td>{{$item->activeOrder->end_at ?? '-'}}</td>
-                                <!-- <td>{{$item->hour ?? '-'}} Jam</td> -->
-                                <td>
-                                    @if($item->product->type === "Billiard")
-                                    {{rupiah($item->quantity * $item->price)}}
-                                    @else
-                                    {{rupiah($item->quantity * $item->product->price)}}
-                                    @endif
-                                </td>
+                                <td>{{rupiah($item->price)}}</td>
                             </tr>
                             @endforeach
                         </tbody>

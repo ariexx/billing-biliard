@@ -23,27 +23,18 @@
             </tr>
             </thead>
             <tbody>
+            {{-- order_items.price adalah total baris yang dikunci saat transaksi.
+                 Jangan pernah membacanya dari products.price: harga produk bisa
+                 berubah, dan struk lama yang dicetak ulang jadi tidak menjumlah. --}}
             @foreach($order->orderItems as $item)
                 <tr>
                     <td>
-                        {{ $item->product->name }}
+                        {{ $item->product?->name ?? 'Produk dihapus' }}
                         @if($item->hour) - {{ $item->hour }} Jam @endif
                     </td>
                     <td>{{ $item->quantity }}</td>
-                    <td>
-                        @if($item->product->type === "Billiard")
-                            {{ rupiah($item->price) }}
-                        @else
-                            {{ rupiah($item->product->price) }}
-                        @endif
-                    </td>
-                    <td>
-                        @if($item->product->type === "Billiard")
-                            {{ rupiah($item->quantity * $item->price) }}
-                        @else
-                            {{ rupiah($item->quantity * $item->product->price) }}
-                        @endif
-                    </td>
+                    <td>{{ rupiah((int) round($item->price / max($item->quantity, 1))) }}</td>
+                    <td>{{ rupiah($item->price) }}</td>
                 </tr>
             @endforeach
             </tbody>

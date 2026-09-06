@@ -28,7 +28,7 @@ class OrdersDataTable extends DataTable
                 return $order->created_at->format('d/m/Y H:i:s');
             })
             ->addColumn('cashier', function (Order $order) {
-                return $order->user->name;
+                return $order->user?->name ?? '-';
             })
             ->addColumn('total', function (Order $order) {
                 return 'Rp ' . number_format($order->orderItems->sum('price'), 2, ',', '.');
@@ -37,9 +37,9 @@ class OrdersDataTable extends DataTable
                 return $order?->orderItems?->first()?->product?->name;
             })
             ->addColumn('payment_method', function (Order $order) {
-                return $order->payment->name;
+                return $order->payment?->name ?? '-';
             })
-            ->setRowId('id');
+            ->setRowId('uuid');
     }
 
     /**
@@ -48,9 +48,20 @@ class OrdersDataTable extends DataTable
      * @param \App\Models\Order $model
      * @return \Illuminate\Database\Eloquent\Builder
      */
+    /**
+     * Kasir hanya melihat ordernya sendiri. Sebelumnya query ini polos, sehingga
+     * kartu "Total Orderan Hari Ini" milik kasir yang login berdiri di atas tabel
+     * berisi seluruh order semua kasir sejak aplikasi dipakai.
+     */
     public function query(Order $model): QueryBuilder
     {
-        return $model->newQuery();
+        $query = $model->newQuery()->with(['user', 'payment', 'orderItems.product']);
+
+        if (auth()->user()?->role !== 'admin') {
+            $query->where('user_uuid', auth()->id());
+        }
+
+        return $query;
     }
 
     /**
@@ -85,13 +96,16 @@ class OrdersDataTable extends DataTable
      */
     public function getColumns(): array
     {
+        // cashier/table_number/total/payment_method bukan kolom di tabel orders.
+        // Dengan serverSide(true), Column::make() membuat Yajra menerjemahkan klik
+        // header atau ketikan di kotak search menjadi "order by total" / "where
+        // orders.cashier like ?" -> SQLSTATE 42S22 Unknown column.
         return [
-            //            Column::make('id'),
             Column::make('order_number'),
-            Column::make('cashier'),
-            Column::make('table_number'),
-            Column::make('total'),
-            Column::make('payment_method'),
+            Column::computed('cashier'),
+            Column::computed('table_number'),
+            Column::computed('total'),
+            Column::computed('payment_method'),
             Column::make('created_at'),
             Column::computed('action')
                 ->exportable(false)

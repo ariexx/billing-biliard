@@ -55,8 +55,29 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    /**
+     * Satu order bisa punya beberapa baris active_orders (perpanjangan main bebas
+     * membuat baris baru), jadi hasOne di bawah ini mengembalikan baris yang
+     * sembarang. Untuk logika bisnis pakai currentSession() atau activeOrders().
+     */
     public function activeOrder(): HasOne
     {
         return $this->hasOne(ActiveOrder::class);
+    }
+
+    public function activeOrders(): HasMany
+    {
+        return $this->hasMany(ActiveOrder::class, 'order_uuid', 'uuid');
+    }
+
+    /**
+     * Sesi meja yang sedang berjalan, atau null kalau semuanya sudah ditutup.
+     */
+    public function currentSession(): ?ActiveOrder
+    {
+        return $this->activeOrders()
+            ->where('is_active', true)
+            ->orderByDesc('started_at')
+            ->first();
     }
 }

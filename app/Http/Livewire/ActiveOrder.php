@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use App\Models\ActiveOrder as ModelsActiveOrder;
 use App\Models\OrderItem;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Jantinnerezo\LivewireAlert\LivewireAlert;
 use Livewire\Component;
 
@@ -23,42 +24,79 @@ class ActiveOrder extends Component
         return view('livewire.active-order', compact('activeOrder'));
     }
 
+    /**
+     * Menutup sesi main bebas dan mengubah tarif per menit yang tersimpan di
+     * order item menjadi total tagihan.
+     *
+     * Filter is_active + lockForUpdate WAJIB: tanpa itu klik kedua menghitung
+     * ulang menit x harga di mana harga sudah menjadi total, sehingga tagihan
+     * berlipat ganda. Dua tab yang terbuka bersamaan sudah cukup untuk memicunya
+     * karena kartu meja baru hilang pada poll 10 detik berikutnya.
+     */
     public function stopTimer($orderUuid, $uniqueUuid)
     {
-        \DB::beginTransaction();
         try {
-            $order = ModelsActiveOrder::where('order_uuid', $orderUuid)
-                ->where('unique_id', $uniqueUuid)
-                ->firstOrFail();
-            $orderItem = OrderItem::where('order_uuid', $orderUuid)
-                ->where('active_order_unique_id', $uniqueUuid)
-                ->firstOrFail();
-            $timePlayed = $order->started_at->diffInMinutes(now());
-            $calculatePrice = $timePlayed * $orderItem->price;
+            \DB::transaction(function () use ($orderUuid, $uniqueUuid) {
+                $order = ModelsActiveOrder::where('order_uuid', $orderUuid)
+                    ->where('unique_id', $uniqueUuid)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            $order->update([
-                'is_active' => false,
-                'end_at' => now()
-            ]);
+                if ($order->hour_type !== 'free time') {
+                    throw new \DomainException('Sesi ini bukan main bebas.');
+                }
 
-            $orderItem->update([
-                'price' => $calculatePrice,
-            ]);
+                $orderItem = OrderItem::where('order_uuid', $orderUuid)
+                    ->where('active_order_unique_id', $uniqueUuid)
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
-            \DB::commit();
+                // $orderItem->price masih berisi tarif per menit sampai baris ini.
+                $timePlayed = $order->started_at->diffInMinutes(now());
+
+                $order->update([
+                    'is_active' => false,
+                    'end_at' => now(),
+                ]);
+
+                $orderItem->update([
+                    'price' => $timePlayed * $orderItem->price,
+                ]);
+            });
+
             $this->alert('success', 'Order Selesai');
-        } catch (\Exception $e) {
-            \DB::rollBack();
-            $this->alert('error', 'Order tidak ditemukan');
+        } catch (\DomainException $e) {
+            $this->alert('error', $e->getMessage());
+        } catch (ModelNotFoundException $e) {
+            $this->alert('error', 'Sesi sudah selesai atau tidak ditemukan.');
+        } catch (\Throwable $e) {
+            \Log::error('stopTimer gagal', ['order' => $orderUuid, 'error' => $e->getMessage()]);
+            $this->alert('error', 'Gagal menutup sesi, silakan coba lagi.');
         }
     }
 
+    /**
+     * Mengakhiri blok jam reguler lebih awal. Blok reguler dibayar di muka
+     * sehingga harganya tidak dihitung ulang.
+     *
+     * Guard hour_type wajib: method Livewire bisa dipanggil langsung ke endpoint
+     * /livewire/message, dan tanpa guard ini sesi main bebas bisa ditutup lewat
+     * jalur ini tanpa pernah ditagih.
+     */
     public function habiskanWaktu($uniqueUuid)
     {
         $activeOrder = ModelsActiveOrder::where('unique_id', $uniqueUuid)
+            ->where('is_active', true)
             ->first();
+
         if (!$activeOrder) {
-            $this->alert('error', 'Order tidak ditemukan');
+            $this->alert('error', 'Sesi sudah selesai atau tidak ditemukan.');
+            return;
+        }
+
+        if ($activeOrder->hour_type !== 'regular') {
+            $this->alert('error', 'Sesi main bebas harus ditutup lewat tombol Selesai.');
             return;
         }
 

@@ -7,13 +7,14 @@
             <div class="card">
                 <h5 class="card-header">Order Item</h5>
                 <div class="card-body">
-                    @if (session()->has('errors'))
-                        @foreach ($errors->all() as $error)
+                    {{-- Dua blok terpisah: dengan @elseif, pesan "Waktu belum habis"
+                         hilang diam-diam setiap kali ada error validasi juga. --}}
+                    @foreach ($errors->all() as $error)
                         <div class="alert alert-danger">
                             {{ $error }}
                         </div>
-                        @endforeach
-                    @elseif(session()->has('error'))
+                    @endforeach
+                    @if (session()->has('error'))
                         <div class="alert alert-danger">
                             {{ session('error') }}
                         </div>

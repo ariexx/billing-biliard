@@ -36,8 +36,12 @@ class OrderItem extends Model
         return $this->belongsTo(ActiveOrder::class, 'active_order_unique_id', 'unique_id');
     }
 
+    /**
+     * withTrashed() supaya struk lama tetap bisa dicetak setelah produknya
+     * dihapus. Tanpa ini relasinya null dan view struk fatal error.
+     */
     public function product(): BelongsTo
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }

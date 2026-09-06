@@ -20,7 +20,12 @@
                                     Lihat Detail Order
                                 </a>
                             </p>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="habiskanWaktu('{{$order->unique_id}}')">
+                            {{-- stopImmediatePropagation menahan listener Livewire yang
+                                 terpasang pada elemen yang sama. Tanpa konfirmasi, satu
+                                 salah klik mengakhiri meja pelanggan tanpa bisa dibatalkan. --}}
+                            <button class="btn btn-danger btn-sm mt-2"
+                                    onclick="if (!confirm('Habiskan waktu meja {{ $order->product?->name }}?')) { event.stopImmediatePropagation(); event.preventDefault(); }"
+                                    wire:click.prevent="habiskanWaktu('{{$order->unique_id}}')">
                                 Habiskan
                             </button>
                         </div>
@@ -44,7 +49,11 @@
                                     Lihat Detail Order
                                 </a>
                             </p>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="stopTimer('{{ $order->order_uuid }}', '{{$order->unique_id}}')">
+                            <button class="btn btn-danger btn-sm mt-2"
+                                    wire:loading.attr="disabled"
+                                    wire:target="stopTimer('{{ $order->order_uuid }}', '{{$order->unique_id}}')"
+                                    onclick="if (!confirm('Selesaikan sesi main bebas meja {{ $order->product?->name }}? Tagihan akan dihitung sekarang.')) { event.stopImmediatePropagation(); event.preventDefault(); }"
+                                    wire:click.prevent="stopTimer('{{ $order->order_uuid }}', '{{$order->unique_id}}')">
                                 Selesai
                             </button>
                         </div>
