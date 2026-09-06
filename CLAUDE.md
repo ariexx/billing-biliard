@@ -42,6 +42,14 @@ To reinstall, delete that file. `writeEnv` backs up the old `.env` alongside it,
 
 `tests/TestCase::setUp` creates the marker so the redirect doesn't hijack the suite; `InstallTest` removes it and restores it in `tearDown`.
 
+## Daily recap to Telegram
+
+`rekap:telegram` sends a daily summary to a Telegram chat. It is **scheduled hourly**, not once at the send hour: the shop PC is switched off overnight, so a single `dailyAt()` would silently drop the report whenever the machine happened to be off. Instead a date becomes "due" once `TELEGRAM_REPORT_HOUR` has passed, `storage/app/rekap-telegram-terakhir.txt` records the last date sent, and any missed days are sent on the next tick (capped by `TELEGRAM_MAX_BACKLOG_DAYS`). The marker only ever moves forward, and is **not** advanced when a send fails, so the next tick retries.
+
+All figures come from `App\Services\Rekap`, the same class the Filament `Laporan` page uses — duplicating the aggregation would eventually produce two different "omzet" numbers for the same day. Product and cashier names are user input and reach a `parse_mode=HTML` message, so everything goes through `TelegramNotifier::escape()`.
+
+`TELEGRAM_SEND_BACKUP=true` additionally attaches the `.sql.gz` dump to the same chat after `backup:database` runs (`--telegram` / `--no-telegram` override it per run). Off by default: the dump holds every transaction plus user password hashes, and ordinary Telegram chats are not end-to-end encrypted. A Telegram failure never fails the backup — the local dump and the Drive copy are the real backups.
+
 ## Two front ends
 
 - **Cashier UI** — `/home`, Blade + Bootstrap 5 + Livewire, auth via `laravel/ui`. Registration/reset/verify routes are disabled in `routes/web.php`.

@@ -188,6 +188,10 @@ class Installer
             'GOOGLE_DRIVE_CLIENT_SECRET' => $data['gdrive_client_secret'] ?? '',
             'GOOGLE_DRIVE_REFRESH_TOKEN' => $data['gdrive_refresh_token'] ?? '',
             'GOOGLE_DRIVE_FOLDER_ID' => $data['gdrive_folder_id'] ?? '',
+            'TELEGRAM_BOT_TOKEN' => $data['telegram_bot_token'] ?? '',
+            'TELEGRAM_CHAT_ID' => $data['telegram_chat_id'] ?? '',
+            'TELEGRAM_REPORT_HOUR' => (string) ($data['telegram_report_hour'] ?? 22),
+            'TELEGRAM_SEND_BACKUP' => ! empty($data['telegram_send_backup']) ? 'true' : 'false',
         ];
 
         foreach ($nilai as $key => $value) {

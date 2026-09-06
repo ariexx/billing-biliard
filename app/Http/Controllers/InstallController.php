@@ -80,6 +80,11 @@ class InstallController extends Controller
             'gdrive_client_secret' => 'nullable|string',
             'gdrive_refresh_token' => 'nullable|string',
             'gdrive_folder_id' => 'nullable|string',
+
+            'telegram_bot_token' => 'nullable|string',
+            'telegram_chat_id' => 'nullable|string',
+            'telegram_report_hour' => 'nullable|integer|min:0|max:23',
+            'telegram_send_backup' => 'nullable|boolean',
         ]);
 
         $uji = $this->installer->testDatabase([
