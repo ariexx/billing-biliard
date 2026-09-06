@@ -2,16 +2,36 @@
 
 @section('content')
     <div class="container">
-        <livewire:product />
+        {{-- Bilah atas: pencarian cepat dan jumlah order yang belum dibayar.
+             Keduanya hal yang dibutuhkan kasir kapan saja, jadi tidak boleh
+             ikut tergulir bersama grid meja. --}}
+        <div class="row g-2 align-items-center mb-4">
+            <div class="col-md-7">
+                <form action="{{ route('order.cari') }}" method="GET" class="d-flex gap-2">
+                    <input type="search" name="q" class="form-control"
+                           placeholder="Cari nomor order atau nama meja..."
+                           value="{{ request('q') }}" autocomplete="off">
+                    <button class="btn btn-outline-primary flex-shrink-0">
+                        <i class="fa fa-search"></i> Cari
+                    </button>
+                </form>
+            </div>
+            <div class="col-md-5 text-md-end">
+                @if ($belumDibayar->isNotEmpty())
+                    <a href="#belum-dibayar" class="btn btn-warning">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        {{ $belumDibayar->count() }} order belum dibayar
+                    </a>
+                @else
+                    <span class="text-muted small">Semua order sudah dibayar</span>
+                @endif
+            </div>
+        </div>
 
-        <hr class="my-4"/>
-
-        <livewire:active-order/>
+        <livewire:meja-grid />
 
         @if ($belumDibayar->isNotEmpty())
-            <hr class="my-4"/>
-
-            <div class="card border-warning mb-4">
+            <div class="card border-warning mt-4" id="belum-dibayar">
                 <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center">
                     <b>Belum Dibayar</b>
                     <span class="badge bg-warning text-dark">{{ $belumDibayar->count() }}</span>

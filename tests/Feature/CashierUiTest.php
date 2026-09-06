@@ -67,11 +67,11 @@ class CashierUiTest extends TestCase
         $terpakai = $this->meja('Meja Terpakai');
         $this->sesi($terpakai, 'regular', 10, 50, 50000);
 
-        Livewire::test(\App\Http\Livewire\Product::class)
+        Livewire::test(\App\Http\Livewire\MejaGrid::class)
             ->assertSuccessful()
             ->assertSee('Meja Kosong')
             ->assertSee('Meja Terpakai')
-            ->assertSee('Lihat Order')
+            ->assertSee('Detail')
             // Hanya meja kosong yang punya tombol mulai; meja terpakai tidak boleh
             // menawarkan aksi yang pasti ditolak server.
             ->assertSee("saveOrder('".$kosong->uuid."')", false)
@@ -81,14 +81,14 @@ class CashierUiTest extends TestCase
     /** @test */
     public function kartu_meja_reguler_menampilkan_sisa_waktu_terhitung_server(): void
     {
-        // Angka di dalam <x-countdown> adalah hasil render server, jadi tetap
-        // benar walau Alpine gagal dimuat dari CDN.
+        // Sisa waktu dirender server dan dibulatkan ke ATAS, jadi blok 90 menit
+        // tampil "1j 30m", bukan "1j 29m".
         $this->sesi($this->meja('Meja 1'), 'regular', 30, 90, 50000);
 
-        Livewire::test(\App\Http\Livewire\ActiveOrder::class)
+        Livewire::test(\App\Http\Livewire\MejaGrid::class)
             ->assertSuccessful()
-            ->assertSee('Sisa waktu')
-            ->assertSee('x-text', false);
+            ->assertSee('1j 30m')
+            ->assertSee('sisa');
     }
 
     /** @test */
@@ -96,11 +96,84 @@ class CashierUiTest extends TestCase
     {
         $this->sesi($this->meja('Meja 2'), 'free time', 90, 30, 500);
 
-        Livewire::test(\App\Http\Livewire\ActiveOrder::class)
+        Livewire::test(\App\Http\Livewire\MejaGrid::class)
             ->assertSuccessful()
-            ->assertSee('Main Bebas')
+            ->assertSee('Main bebas')
             ->assertSee('1j 30m')
             ->assertSee('Rp 45.000,00');
+    }
+
+    /** @test */
+    public function kartu_meja_berubah_status_sesuai_sisa_waktu(): void
+    {
+        $this->sesi($this->meja('Meja A'), 'regular', 10, 50, 50000);  // masih lama
+        $this->sesi($this->meja('Meja B'), 'regular', 55, 5, 50000);   // <= 10 menit
+        $this->sesi($this->meja('Meja C'), 'regular', 90, -30, 50000); // sudah lewat
+
+        Livewire::test(\App\Http\Livewire\MejaGrid::class)
+            ->assertSuccessful()
+            ->assertSee('Jalan')
+            ->assertSee('Segera habis')
+            ->assertSee('Waktu habis')
+            // Warna tidak boleh jadi satu-satunya penanda.
+            ->assertSee('data-status="segera"', false)
+            ->assertSee('data-status="habis"', false);
+    }
+
+    /** @test */
+    public function satu_meja_hanya_muncul_sekali_di_grid(): void
+    {
+        // Sebelum digabung, meja terpakai muncul di "Pilih Meja" DAN "Meja Aktif".
+        $meja = $this->meja('Meja Tunggal');
+        $this->sesi($meja, 'regular', 10, 50, 50000);
+
+        $html = $this->get(route('home'))->assertSuccessful()->getContent();
+
+        $this->assertStringContainsString('Meja Tunggal', $html);
+        // Inti pengujiannya: tepat satu kartu, bukan dua.
+        $this->assertSame(1, substr_count($html, 'data-meja="Meja Tunggal"'));
+    }
+
+    /** @test */
+    public function cari_nomor_order_langsung_membuka_ordernya(): void
+    {
+        $order = $this->sesi($this->meja('Meja 9'), 'regular', 10, 50, 50000);
+
+        $this->get(route('order.cari', ['q' => $order->order_number]))
+            ->assertRedirect(route('order.view', $order->uuid));
+    }
+
+    /** @test */
+    public function cari_nama_meja_menemukan_ordernya(): void
+    {
+        $order = $this->sesi($this->meja('Meja Pojok'), 'regular', 10, 50, 50000);
+
+        $this->get(route('order.cari', ['q' => 'Pojok']))
+            ->assertRedirect(route('order.view', $order->uuid));
+    }
+
+    /** @test */
+    public function cari_yang_tidak_ketemu_memberi_pesan_bukan_error(): void
+    {
+        $this->get(route('order.cari', ['q' => 'tidak-ada-xyz']))
+            ->assertSuccessful()
+            ->assertSee('Tidak ada order yang cocok');
+    }
+
+    /** @test */
+    public function kasir_tidak_bisa_menemukan_order_kasir_lain_lewat_pencarian(): void
+    {
+        $order = $this->sesi($this->meja('Meja 10'), 'regular', 10, 50, 50000);
+
+        $kasirLain = User::factory()->create(['role' => 'cashier']);
+
+        // Kata kunci digemakan di judul halaman, jadi yang diperiksa adalah
+        // tidak adanya baris hasil -- bukan tidak adanya teks nomor order.
+        $this->actingAs($kasirLain)
+            ->get(route('order.cari', ['q' => $order->order_number]))
+            ->assertSuccessful()
+            ->assertSee('Tidak ada order yang cocok')
+            ->assertDontSee(route('order.view', $order->uuid));
     }
 
     /** @test */

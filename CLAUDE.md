@@ -77,11 +77,17 @@ Entity roles:
 - Settlement is separate from play: `orders.paid_at` (null = unpaid) is set by `POST /order/{uuid}/bayar`, where the cashier picks the payment method. An order cannot be settled while a session is still running.
 - Guards in `OrderItemController::update`: a free-time package can't start while a regular block is still running (`end_at > now()` → "Waktu belum habis"), and a regular package can't be added on top of a live free-time session ("Main bebas belum habis").
 
-`resources/views/livewire/active-order.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.
+`resources/views/livewire/meja-grid.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.
 
 ### Schema debts (verified against a production dump)
 
 `order_items` and `active_orders` were created **without a PRIMARY KEY**, and `order_items.uuid` has no index at all, even though both models declare `$primaryKey`. Migrations `2026_09_06_1800*` add the keys, backfill `hour_type`, add hot-path indexes, and make `orders.order_number` unique. They **abort with instructions** rather than run if duplicates exist — always `php artisan backup:database && php artisan db:integrity-check` first. The PK and `MODIFY ENUM` statements are MySQL-only and skip on sqlite so the test suite still runs.
+
+### Cashier dashboard
+
+One Livewire component, `MejaGrid`, renders **every** table — free and occupied — as a single card each. It used to be two components (`Product` + `ActiveOrder`), which made an occupied table appear twice on screen. Merging was also a hard requirement: a single card needs both the "Mulai" and "Selesai" actions, and Livewire actions cannot cross component boundaries.
+
+Card state comes from remaining minutes (`kosong` / `jalan` / `segera` ≤ 10 min / `habis` / `bebas`), exposed as `data-status` and always paired with a text badge — colour is never the only signal. Cards are ordered by name and never re-sorted by state, so a table stays in the same spot.
 
 ### Front-end constraints
 
@@ -93,7 +99,7 @@ Confirmations on `wire:click` buttons use an inline `onclick` that calls `event.
 
 ### Gotchas
 
-- **There is no `orders.total` column.** `Order::getTotalAttribute()` is a pure accessor over `orderItems->sum('price')`. It is deliberately absent from `$fillable`; writing it throws `Unknown column 'total'`. Same for `order_items.total`.
+- **There is no `orders.total` column.** `Order::getTotalAttribute()` is a pure accessor over `orderItems->sum('price')`. It is deliberately absent from `$fillable`; writing it throws `Unknown column 'total'`. Same for `order_items.total`. The accessor also **shadows any `total` alias** you select on a query that returns `Order` models — `selectRaw('SUM(...) as total')` silently reads back as 0. Alias it something else (`total_omzet`), as `App\Filament\Pages\Laporan` does.
 - `order_items.price` is the **total for that line**, not a unit price — for drinks it is `products.price * quantity`, for a time package it is `hours.price`, and for a free-time session it is the per-minute rate until `stopTimer()` overwrites it with the total. Always render money from this column, never from `products.price`, or reprinted receipts stop adding up.
 - `Product::getTypeAttribute()` returns `ucfirst($value)`. Queries use lowercase (`where('type', 'billiard')`, `scopeBilliard`), while `$product->type` in PHP/Blade reads `'Billiard'`. Compare against the DB value in queries and the accessor value in PHP.
 - `HasUuid` casts to string on purpose. `Str::uuid()` returns an object, so on the request that creates a model `$model->uuid` is an object while the same value read back is a string — `===` between them is false, which silently broke ownership checks.
