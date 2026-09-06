@@ -14,6 +14,20 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+/*
+ * Wizard pemasangan. Hanya hidup selama storage/installed belum ada; setelah itu
+ * AbortIfInstalled membuatnya 404 karena route ini menulis .env dan membuat akun
+ * admin.
+ */
+Route::middleware(\App\Http\Middleware\AbortIfInstalled::class)
+    ->prefix('install')
+    ->name('install.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\InstallController::class, 'show'])->name('show');
+        Route::post('/test-database', [\App\Http\Controllers\InstallController::class, 'testDatabase'])->name('test-database');
+        Route::post('/', [\App\Http\Controllers\InstallController::class, 'install'])->name('run');
+    });
+
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('home');

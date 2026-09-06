@@ -36,6 +36,11 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            // Mengarahkan ke wizard selama storage/installed belum ada, supaya
+            // pengguna baru tidak mendarat di halaman login yang pasti error
+            // karena tabel users belum dibuat. Urutannya dipaksa lewat
+            // $middlewarePriority di bawah.
+            \App\Http\Middleware\RedirectIfNotInstalled::class,
         ],
 
         'api' => [
@@ -43,6 +48,30 @@ class Kernel extends HttpKernel
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+    ];
+
+    /**
+     * Urutan eksekusi yang dipaksakan.
+     *
+     * Daftar bawaan framework mengangkat middleware auth ke depan, sehingga
+     * pengunjung /home pada aplikasi yang belum dipasang dilempar ke /login
+     * (yang pasti error, tabel users belum ada) alih-alih ke wizard.
+     * RedirectIfNotInstalled karena itu ditaruh sebelum AuthenticatesRequests.
+     *
+     * @var array<int, class-string>
+     */
+    protected $middlewarePriority = [
+        \Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests::class,
+        \Illuminate\Cookie\Middleware\EncryptCookies::class,
+        \Illuminate\Session\Middleware\StartSession::class,
+        \Illuminate\View\Middleware\ShareErrorsFromSession::class,
+        \App\Http\Middleware\RedirectIfNotInstalled::class,
+        \Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequests::class,
+        \Illuminate\Routing\Middleware\ThrottleRequestsWithRedis::class,
+        \Illuminate\Contracts\Session\Middleware\AuthenticatesSessions::class,
+        \Illuminate\Routing\Middleware\SubstituteBindings::class,
+        \Illuminate\Auth\Middleware\Authorize::class,
     ];
 
     /**

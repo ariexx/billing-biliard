@@ -30,6 +30,18 @@ php artisan orders:expire-sessions
 
 Backups use `ifsnop/mysqldump-php`, not `spatie/laravel-backup`: the `mysqldump` binary is not on PATH on the shop PC.
 
+## Installing on a new shop PC
+
+`start.bat` copies `.env.example` → `.env` and generates `APP_KEY` if missing (the app cannot boot without them, and the wizard itself runs inside the app), then prints the install URL. Everything else is done at **`/install`**: system requirements, DB connection test, `.env`, migrations, admin/cashier accounts, tables + hour packages + payment methods, printer, and Google Drive keys.
+
+Gating is a single file, `storage/installed` (gitignored):
+- absent → `RedirectIfNotInstalled` sends **every** route to the wizard. It sits in `$middlewarePriority` **before** `AuthenticatesRequests`; without that, `/home` hits `auth` first and redirects to a login page that cannot work yet.
+- present → `AbortIfInstalled` makes the whole `/install` group 404, because it writes `.env` and creates an admin.
+
+To reinstall, delete that file. `writeEnv` backs up the old `.env` alongside it, preserves keys the wizard doesn't know about, and **never overwrites an existing `APP_KEY`** (that would invalidate every session and cookie).
+
+`tests/TestCase::setUp` creates the marker so the redirect doesn't hijack the suite; `InstallTest` removes it and restores it in `tearDown`.
+
 ## Two front ends
 
 - **Cashier UI** — `/home`, Blade + Bootstrap 5 + Livewire, auth via `laravel/ui`. Registration/reset/verify routes are disabled in `routes/web.php`.
