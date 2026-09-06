@@ -160,17 +160,9 @@ class Installer
      */
     public function writeEnv(array $data): void
     {
-        $path = $this->envPath();
+        $writer = (new EnvWriter())->usePath($this->envPath());
 
-        if (file_exists($path)) {
-            // Salinan cadangan: pemasangan ulang tidak boleh menghapus konfigurasi lama diam-diam.
-            copy($path, $path.'.backup-'.now()->format('Ymd-His'));
-            $isi = file_get_contents($path);
-        } else {
-            $isi = file_get_contents(base_path('.env.example'));
-        }
-
-        $nilai = [
+        $writer->write([
             'APP_NAME' => $data['app_name'],
             'APP_ENV' => 'production',
             'APP_DEBUG' => 'false',
@@ -192,40 +184,9 @@ class Installer
             'TELEGRAM_CHAT_ID' => $data['telegram_chat_id'] ?? '',
             'TELEGRAM_REPORT_HOUR' => (string) ($data['telegram_report_hour'] ?? 22),
             'TELEGRAM_SEND_BACKUP' => ! empty($data['telegram_send_backup']) ? 'true' : 'false',
-        ];
+        ]);
 
-        foreach ($nilai as $key => $value) {
-            $isi = $this->setEnvKey($isi, $key, $value);
-        }
-
-        // APP_KEY hanya dibuat kalau belum ada: menggantinya akan membuat seluruh
-        // session dan cookie lama tidak bisa didekripsi.
-        //
-        // Nilainya diperiksa setelah trim, BUKAN dengan /^APP_KEY=.+$/m. Berkas
-        // .env di Windows berakhiran CRLF, sehingga baris kosong "APP_KEY=" jadi
-        // "APP_KEY=\r" -- dan `.` cocok dengan \r, membuat kunci kosong dikira
-        // sudah terisi sehingga aplikasi tidak pernah dapat APP_KEY.
-        preg_match('/^APP_KEY=(.*)$/m', $isi, $cocok);
-        $sudahAdaKunci = isset($cocok[1]) && trim($cocok[1]) !== '';
-
-        if (! $sudahAdaKunci) {
-            $isi = $this->setEnvKey($isi, 'APP_KEY', 'base64:'.base64_encode(random_bytes(32)));
-        }
-
-        file_put_contents($path, $isi);
-    }
-
-    private function setEnvKey(string $isi, string $key, string $value): string
-    {
-        // Nilai dengan spasi atau karakter khusus harus dikutip agar terbaca utuh.
-        $quoted = preg_match('/[\s#"\']/', $value) ? '"'.str_replace('"', '\"', $value).'"' : $value;
-        $baris = $key.'='.$quoted;
-
-        if (preg_match('/^'.preg_quote($key, '/').'=.*$/m', $isi)) {
-            return preg_replace('/^'.preg_quote($key, '/').'=.*$/m', $baris, $isi, 1);
-        }
-
-        return rtrim($isi, "\n")."\n".$baris."\n";
+        $writer->ensureAppKey();
     }
 
     /**
