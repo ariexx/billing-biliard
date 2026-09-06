@@ -89,6 +89,13 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
                     ->formatStateUsing(fn ($record) => rupiah((int) $record->orderItems->sum('price'))),
+                Tables\Columns\BadgeColumn::make('paid_at')
+                    ->label('Status')
+                    ->formatStateUsing(fn ($state) => $state ? 'Lunas' : 'Belum dibayar')
+                    ->colors([
+                        'success' => fn ($state) => filled($state),
+                        'warning' => fn ($state) => blank($state),
+                    ]),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime('d/m/Y H:i:s')
@@ -115,6 +122,9 @@ class OrderResource extends Resource
 
                         return 'Tanggal: '.($data['dari'] ?? '...').' s/d '.($data['sampai'] ?? '...');
                     }),
+                Tables\Filters\Filter::make('belum_lunas')
+                    ->label('Hanya yang belum dibayar')
+                    ->query(fn (Builder $query) => $query->whereNull('paid_at')),
                 Tables\Filters\SelectFilter::make('user_uuid')
                     ->label('Kasir')
                     ->relationship('user', 'name'),

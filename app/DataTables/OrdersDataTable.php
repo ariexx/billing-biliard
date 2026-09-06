@@ -39,6 +39,12 @@ class OrdersDataTable extends DataTable
             ->addColumn('payment_method', function (Order $order) {
                 return $order->payment?->name ?? '-';
             })
+            ->addColumn('status', function (Order $order) {
+                return $order->is_paid
+                    ? '<span class="badge bg-success">Lunas</span>'
+                    : '<span class="badge bg-warning text-dark">Belum dibayar</span>';
+            })
+            ->rawColumns(['action', 'status'])
             ->setRowId('uuid');
     }
 
@@ -76,7 +82,7 @@ class OrdersDataTable extends DataTable
             ->columns($this->getColumns())
             ->minifiedAjax()
             //->dom('Bfrtip')
-            ->orderBy(5, 'desc')
+            ->orderBy(6, 'desc')
             ->selectStyleSingle()
             ->buttons([
                 Button::make('excel'),
@@ -106,6 +112,7 @@ class OrdersDataTable extends DataTable
             Column::computed('table_number'),
             Column::computed('total'),
             Column::computed('payment_method'),
+            Column::computed('status'),
             Column::make('created_at'),
             Column::computed('action')
                 ->exportable(false)

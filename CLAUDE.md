@@ -60,8 +60,9 @@ Entity roles:
 
 `hour_type` drives everything, split across `Http\Livewire\Product::saveOrder`, `Http\Livewire\ActiveOrder`, and `OrderItemController::update`:
 
-- **regular** — prepaid block. `end_at = now() + hour`, the order item is priced at `hour->price` up front. Adding another regular package *extends* the existing active order (`hour += `, `end_at->addHours()`), it does not create a new row.
-- **free time** — open-ended play. `ActiveOrder::stopTimer()` closes it and rewrites the item price as `started_at->diffInMinutes(now()) * orderItem->price`, i.e. the stored price is a **per-minute rate** until the session ends, and a **total** afterwards.
+- **regular** — prepaid block. `end_at = now() + hour`, the order item is priced at `hour->price` up front. Adding another regular package *extends* the existing session, basing the new end on `max(now(), end_at)` so a lapsed block doesn't get extended into the past.
+- **free time** — open-ended play, billed **per minute**: `hours.price` for a free-time package is the rate per minute, so `order_items.price` holds that rate until `ActiveOrder::stopTimer()` closes the session and overwrites it with `minutes * rate`. `stopTimer` filters on `is_active` and locks the row — without that a second click re-multiplies a value that is already the total.
+- Settlement is separate from play: `orders.paid_at` (null = unpaid) is set by `POST /order/{uuid}/bayar`, where the cashier picks the payment method. An order cannot be settled while a session is still running.
 - Guards in `OrderItemController::update`: a free-time package can't start while a regular block is still running (`end_at > now()` → "Waktu belum habis"), and a regular package can't be added on top of a live free-time session ("Main bebas belum habis").
 
 `resources/views/livewire/active-order.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.

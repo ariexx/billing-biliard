@@ -20,7 +20,12 @@ class ActiveOrder extends Component
 
     public function render()
     {
-        $activeOrder = \App\Models\ActiveOrder::whereIsActive(true)->get();
+        // orderItem ikut di-eager-load: tagihan berjalan sesi main bebas dibaca
+        // dari harga per menit yang tersimpan di sana.
+        $activeOrder = \App\Models\ActiveOrder::with('product', 'orderItem')
+            ->whereIsActive(true)
+            ->get();
+
         return view('livewire.active-order', compact('activeOrder'));
     }
 

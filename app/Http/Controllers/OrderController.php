@@ -20,12 +20,45 @@ class OrderController extends Controller
         return view('order.view', compact('order'));
     }
 
-    public function edit($uuid)
+    /**
+     * Menandai order lunas dan mencatat metode pembayarannya.
+     *
+     * Sebelum ini metode bayar dipatok Payment::first() saat meja dibuka, jadi
+     * kolom "Metode Bayar" di semua laporan selalu menampilkan nilai yang sama
+     * dan kas tidak bisa direkonsiliasi.
+     */
+    public function bayar($uuid, Request $request)
     {
         $order = Order::where('uuid', $uuid)->firstOrFail();
         $this->authorize('update', $order);
 
-        return view('order.edit', compact('order'));
+        $data = $request->validate([
+            'payment_uuid' => 'required|exists:payments,uuid',
+        ]);
+
+        if ($order->is_paid) {
+            return redirect()->back()->with('error', 'Order ini sudah ditandai lunas.');
+        }
+
+        if ($order->currentSession()) {
+            return redirect()->back()->with('error', 'Masih ada sesi meja yang berjalan. Selesaikan dulu.');
+        }
+
+        $order->update([
+            'payment_uuid' => $data['payment_uuid'],
+            'paid_at' => now(),
+            'paid_by_uuid' => auth()->id(),
+        ]);
+
+        \Log::channel('daily')->info(sprintf(
+            'Order lunas: %s - %s - %s oleh %s',
+            $order->order_number,
+            rupiah((int) $order->total),
+            $order->payment?->name,
+            auth()->user()->name
+        ));
+
+        return redirect()->route('order.view', $order->uuid)->with('status', 'Order ditandai lunas.');
     }
 
     public function pindahMeja($uuid)

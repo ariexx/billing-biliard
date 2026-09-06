@@ -27,7 +27,13 @@ class Order extends Model
         'order_number',
         'user_uuid',
         'payment_uuid',
-        'print_count'
+        'print_count',
+        'paid_at',
+        'paid_by_uuid',
+    ];
+
+    protected $casts = [
+        'paid_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -77,6 +83,16 @@ class Order extends Model
     public function getTotalAttribute()
     {
         return $this->orderItems->sum('price');
+    }
+
+    public function getIsPaidAttribute(): bool
+    {
+        return $this->paid_at !== null;
+    }
+
+    public function scopeBelumLunas($query)
+    {
+        return $query->whereNull('paid_at');
     }
 
     public function user(): BelongsTo

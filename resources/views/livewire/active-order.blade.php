@@ -37,13 +37,17 @@
                         <div class="card-body">
                             <h5 class="card-title"><b>{{ $order->product->name }}</b></h5>
                             <h6 class="card-subtitle mb-2 text-muted">Main bebas</h6>
-                            <b>
-                                <x-countdown :expires="$order->end_at">
-                                    <span x-text="timer.hours">{{ $component->hours() }}</span> hours
-                                    <span x-text="timer.minutes">{{ $component->minutes() }}</span> minutes
-                                    <span x-text="timer.seconds">{{ $component->seconds() }}</span> seconds
-                                </x-countdown>
-                            </b>
+                            {{-- Countdown ke end_at tidak bermakna untuk sesi terbuka:
+                                 setelah lewat, widget-nya diam-diam berubah jadi waktu
+                                 berjalan dengan label yang sama. Yang dibutuhkan kasir
+                                 adalah lama main dan tagihan sampai detik ini. --}}
+                            <p class="mb-1">
+                                Sudah main
+                                <b>{{ intdiv($order->menit_berjalan, 60) }}j {{ $order->menit_berjalan % 60 }}m</b>
+                            </p>
+                            <p class="mb-2">
+                                Tagihan sekarang: <b>{{ rupiah($order->tagihan_berjalan) }}</b>
+                            </p>
                             <p class="mb-2">
                                 <a href="{{ route('order.view', $order->order_uuid) }}" class="text-sm-left text-muted" style="text-decoration: none;" target="_blank">
                                     Lihat Detail Order

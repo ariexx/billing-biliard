@@ -45,6 +45,30 @@ class ActiveOrder extends Pivot
         return $this->started_at->diffInMinutes($this->end_at);
     }
 
+    /**
+     * Menit yang sudah berjalan pada sesi main bebas.
+     */
+    public function getMenitBerjalanAttribute(): int
+    {
+        return (int) $this->started_at->diffInMinutes(now());
+    }
+
+    /**
+     * Tagihan sementara sesi main bebas.
+     *
+     * Selama sesi masih aktif, orderItem->price berisi tarif PER MENIT; baru
+     * diubah jadi total oleh stopTimer(). Jadi angka ini adalah jumlah yang akan
+     * ditagih kalau sesi ditutup sekarang.
+     */
+    public function getTagihanBerjalanAttribute(): int
+    {
+        if ($this->hour_type !== 'free time' || ! $this->is_active) {
+            return 0;
+        }
+
+        return $this->menit_berjalan * (int) ($this->orderItem?->price ?? 0);
+    }
+
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
