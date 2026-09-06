@@ -1,3 +1,18 @@
+# Billing Biliar
+
+Aplikasi kasir dan penagihan untuk rental meja biliar: buka meja, hitung waktu,
+tambahkan minuman ke order yang sama, tandai lunas, lalu cetak struk.
+
+| Dokumen | Untuk |
+|---|---|
+| **[INSTALL.md](INSTALL.md)** | Memasang di PC kasir baru, langkah demi langkah |
+| [CLAUDE.md](CLAUDE.md) | Arsitektur, aturan penagihan, dan catatan teknis |
+
+Ringkasnya: siapkan PHP + MySQL, jalankan `composer install` dan `npm run build`,
+klik `start.bat`, lalu buka **http://localhost:8000/install** dan isi wizardnya.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
