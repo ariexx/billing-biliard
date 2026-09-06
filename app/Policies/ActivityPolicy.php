@@ -22,6 +22,9 @@ class ActivityPolicy
 
 	public function create(User $user): bool
 	{
+        // Tanpa return, method bertipe bool ini melempar TypeError saat dipanggil.
+        // Log aktivitas dibuat oleh sistem, bukan lewat form.
+        return false;
 	}
 
 	public function update(User $user): bool

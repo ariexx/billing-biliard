@@ -19,6 +19,12 @@ class HourResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-clock';
 
+    protected static ?string $navigationGroup = 'Master Data';
+
+    protected static ?int $navigationSort = 2;
+
+    protected static ?string $navigationLabel = 'Paket Jam';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -31,14 +37,28 @@ class HourResource extends Resource
                     ->rules(['required', 'numeric']),
                 Forms\Components\Select::make('type')
                     ->required()
+                    ->reactive()
                     ->options([
-                        'free time' => 'Free time',
-                        'regular' => 'Regular',
+                        'free time' => 'Main bebas (dihitung per menit)',
+                        'regular' => 'Reguler (blok jam, bayar di muka)',
                     ])
                     ->rules(['in:free time,regular']),
+                /*
+                 * Satuan harga BERBEDA per tipe, dan salah isi di sini langsung
+                 * jadi salah tagih: stopTimer() mengalikan harga ini dengan jumlah
+                 * MENIT yang dimainkan untuk sesi main bebas.
+                 */
                 Forms\Components\TextInput::make('price')
                     ->required()
-                    ->rules(['required', 'numeric']),
+                    ->numeric()
+                    ->minValue(0)
+                    ->label(fn (\Closure $get) => $get('type') === 'free time'
+                        ? 'Tarif per MENIT (Rp)'
+                        : 'Harga paket (Rp)')
+                    ->helperText(fn (\Closure $get) => $get('type') === 'free time'
+                        ? 'Main bebas ditagih per menit. Contoh: isi 500 berarti Rp 500/menit (Rp 30.000/jam).'
+                        : 'Harga sekali bayar untuk seluruh blok jam ini.')
+                    ->rules(['required', 'numeric', 'min:0']),
             ]);
     }
 
