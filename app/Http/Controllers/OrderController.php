@@ -50,7 +50,14 @@ class OrderController extends Controller
 
         $this->authorize('view', $order);
 
-        return view('order.view', compact('order'));
+        // Item yang dibatalkan tetap ditampilkan (dicoret), bukan lenyap begitu
+        // saja -- supaya pembatalan terlihat oleh siapa pun yang membuka order.
+        $dibatalkan = $order->orderItems()
+            ->onlyTrashed()
+            ->with('product', 'voidedBy')
+            ->get();
+
+        return view('order.view', compact('order', 'dibatalkan'));
     }
 
     /**

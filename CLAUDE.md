@@ -79,6 +79,20 @@ Entity roles:
 
 `resources/views/livewire/meja-grid.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.
 
+### Fraud controls on order items
+
+A cashier must never be able to erase a bill for time already played. `OrderItemController::destroy` therefore:
+
+- refuses **time lines** unless the user is an admin (403). A time line is identified by `OrderItem::isBarisWaktu()` — `active_order_unique_id !== null`, i.e. the row is tied to an `active_orders` session; product type is only a fallback for pre-2022 rows;
+- refuses anything once `orders.paid_at` is set;
+- requires a `void_reason`, stored with `voided_by_uuid` **before** the soft delete, so a voided row stays accountable.
+
+Voided lines are rendered struck-through on the order page rather than vanishing, and every model change is mirrored into the Filament activity log (`config/filament-logger.php` → `models.register`, which shipped empty). Note the remaining hole that code cannot close: a cashier who simply never marks an order paid still pockets the cash — only a shift/cash reconciliation report catches that.
+
+### Free-time duration display
+
+`order_items.hour` on a free-time line holds the **package** number the admin typed (usually 1), not how long the customer played — showing it raw confuses cashier and customer alike. Use `OrderItem::labelDurasi()` on the order page and the receipt: it returns real elapsed time for free-time lines (`started_at` → `end_at` once closed, → `now()` while running) and falls back to `"{hour} Jam"` for regular blocks.
+
 ### Schema debts (verified against a production dump)
 
 `order_items` and `active_orders` were created **without a PRIMARY KEY**, and `order_items.uuid` has no index at all, even though both models declare `$primaryKey`. Migrations `2026_09_06_1800*` add the keys, backfill `hour_type`, add hot-path indexes, and make `orders.order_number` unique. They **abort with instructions** rather than run if duplicates exist — always `php artisan backup:database && php artisan db:integrity-check` first. The PK and `MODIFY ENUM` statements are MySQL-only and skip on sqlite so the test suite still runs.

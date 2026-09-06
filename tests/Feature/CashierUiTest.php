@@ -200,16 +200,18 @@ class CashierUiTest extends TestCase
     }
 
     /** @test */
-    public function halaman_order_menampilkan_form_bayar_dan_tombol_hapus_item(): void
+    public function halaman_order_menampilkan_form_bayar_dan_mengunci_baris_waktu(): void
     {
         $order = $this->sesi($this->meja('Meja 5'), 'regular', 120, -60, 50000);
         $order->activeOrders()->update(['is_active' => false]);
 
+        // Baris pertama adalah baris waktu meja: kasir TIDAK boleh punya tombol
+        // batal di situ. Aturan lengkapnya diuji di VoidItemTest.
         $this->get(route('order.view', $order->uuid))
             ->assertSuccessful()
             ->assertSee('BELUM DIBAYAR')
             ->assertSee('Tandai Lunas')
-            ->assertSee(route('order-item.destroy', $order->orderItems->first()->uuid));
+            ->assertDontSee(route('order-item.destroy', $order->orderItems->first()->uuid));
     }
 
     /** @test */
