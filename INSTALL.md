@@ -277,6 +277,19 @@ punya password kosong — coba dikosongkan.
 Nama printer di `.env` (`PRINTER=`) harus sama persis dengan nama di Windows,
 termasuk spasi dan huruf besar-kecil.
 
+**Muncul berulang kali `Failed to listen on 127.0.0.1:8000`**
+Port 8000 sedang dipakai program lain, atau aplikasi ini sudah berjalan di
+jendela lain. Coba buka http://localhost:8000 dulu. Kalau memang bukan, lihat
+siapa pemakainya dengan `netstat -ano | findstr :8000`, atau jalankan di port
+lain: `start.bat 8080`.
+
+Kalau port jelas kosong tapi tetap gagal, jalankan ini untuk melihat alasan
+sebenarnya dari PHP (bukan pesan Laravel):
+
+```powershell
+php -S 127.0.0.1:8000 -t public
+```
+
 **Backup tidak jalan otomatis**
 Pastikan jendela *billiard-scheduler* masih terbuka. Periksa jadwalnya dengan
 `php artisan schedule:list`.
