@@ -45,6 +45,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/order-history/drinks', [\App\Http\Controllers\HomeController::class, 'orderHistoryDrinks'])
         ->name('order-history.drinks');
 
+    Route::get('/order/cari', [\App\Http\Controllers\OrderController::class, 'cari'])
+        ->name('order.cari');
+
     //order view
     Route::get('/order/{uuid}', [\App\Http\Controllers\OrderController::class, 'view'])
         ->name('order.view');

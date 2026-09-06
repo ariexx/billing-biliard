@@ -68,7 +68,7 @@ class BillingTest extends TestCase
         [$order, $session, $item] = $this->sesiMainBebas($kasir, $this->meja(), 500, 120);
 
         Livewire::actingAs($kasir)
-            ->test(\App\Http\Livewire\ActiveOrder::class)
+            ->test(\App\Http\Livewire\MejaGrid::class)
             ->call('stopTimer', $order->uuid, $session->unique_id)
             ->call('stopTimer', $order->uuid, $session->unique_id);
 
@@ -84,7 +84,7 @@ class BillingTest extends TestCase
         [$order, $session, $item] = $this->sesiMainBebas($kasir, $this->meja(), 500, 120);
 
         Livewire::actingAs($kasir)
-            ->test(\App\Http\Livewire\ActiveOrder::class)
+            ->test(\App\Http\Livewire\MejaGrid::class)
             ->call('habiskanWaktu', $session->unique_id);
 
         // Sesi harus tetap terbuka: tarif per menit belum berubah jadi total.
@@ -178,7 +178,7 @@ class BillingTest extends TestCase
         $hour = Hour::create(['name' => '1 Jam', 'hour' => 1, 'type' => 'regular', 'price' => 50000]);
 
         Livewire::actingAs($kasir)
-            ->test(\App\Http\Livewire\Product::class)
+            ->test(\App\Http\Livewire\MejaGrid::class)
             ->set('selectedHours', [$meja->uuid => $hour->uuid])
             ->call('saveOrder', $meja->uuid);
 

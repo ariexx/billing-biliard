@@ -199,20 +199,53 @@ class OrderItemController extends Controller
         ]);
     }
 
-    public function destroy($uuid)
+    /**
+     * Membatalkan satu baris order.
+     *
+     * Baris waktu biliar TIDAK boleh dibatalkan kasir. Baris itu mewakili waktu
+     * yang benar-benar sudah dimainkan; menghapusnya membuat struk hanya berisi
+     * minuman dan selisihnya bisa masuk kantong. Hanya admin yang boleh, dan
+     * setiap pembatalan wajib beralasan serta tercatat di log aktivitas.
+     */
+    public function destroy($uuid, Request $request)
     {
-        $orderItem = OrderItem::where('uuid', $uuid)->firstOrFail();
+        $orderItem = OrderItem::with('order', 'product')->where('uuid', $uuid)->firstOrFail();
         $this->authorize('update', $orderItem->order);
+
+        abort_if(
+            $orderItem->order->is_paid,
+            403,
+            'Order sudah lunas, itemnya tidak bisa diubah lagi.'
+        );
+
+        abort_if(
+            $orderItem->isBarisWaktu() && auth()->user()->role !== 'admin',
+            403,
+            'Baris waktu meja hanya bisa dibatalkan admin.'
+        );
+
+        $data = $request->validate([
+            'void_reason' => 'required|string|min:4|max:255',
+        ], [], ['void_reason' => 'alasan pembatalan']);
+
+        // Alasan dan pelakunya disimpan SEBELUM soft delete, supaya baris yang
+        // dibatalkan tetap bisa dipertanggungjawabkan.
+        $orderItem->forceFill([
+            'void_reason' => $data['void_reason'],
+            'voided_by_uuid' => auth()->id(),
+        ])->save();
 
         $orderItem->delete();
 
         \Log::channel('daily')->info(sprintf(
-            'Order item dihapus: %s (order %s) oleh %s',
-            $uuid,
-            $orderItem->order_uuid,
-            auth()->user()->name
+            'Item order dibatalkan: %s %s (order %s) oleh %s - alasan: %s',
+            $orderItem->product?->name ?? '?',
+            rupiah((int) $orderItem->price),
+            $orderItem->order->order_number,
+            auth()->user()->name,
+            $data['void_reason']
         ));
 
-        return redirect()->back();
+        return redirect()->back()->with('status', 'Item dibatalkan.');
     }
 }

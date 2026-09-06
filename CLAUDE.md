@@ -42,6 +42,14 @@ To reinstall, delete that file. `writeEnv` backs up the old `.env` alongside it,
 
 `tests/TestCase::setUp` creates the marker so the redirect doesn't hijack the suite; `InstallTest` removes it and restores it in `tearDown`.
 
+## Daily recap to Telegram
+
+`rekap:telegram` sends a daily summary to a Telegram chat. It is **scheduled hourly**, not once at the send hour: the shop PC is switched off overnight, so a single `dailyAt()` would silently drop the report whenever the machine happened to be off. Instead a date becomes "due" once `TELEGRAM_REPORT_HOUR` has passed, `storage/app/rekap-telegram-terakhir.txt` records the last date sent, and any missed days are sent on the next tick (capped by `TELEGRAM_MAX_BACKLOG_DAYS`). The marker only ever moves forward, and is **not** advanced when a send fails, so the next tick retries.
+
+All figures come from `App\Services\Rekap`, the same class the Filament `Laporan` page uses — duplicating the aggregation would eventually produce two different "omzet" numbers for the same day. Product and cashier names are user input and reach a `parse_mode=HTML` message, so everything goes through `TelegramNotifier::escape()`.
+
+`TELEGRAM_SEND_BACKUP=true` additionally attaches the `.sql.gz` dump to the same chat after `backup:database` runs (`--telegram` / `--no-telegram` override it per run). Off by default: the dump holds every transaction plus user password hashes, and ordinary Telegram chats are not end-to-end encrypted. A Telegram failure never fails the backup — the local dump and the Drive copy are the real backups.
+
 ## Two front ends
 
 - **Cashier UI** — `/home`, Blade + Bootstrap 5 + Livewire, auth via `laravel/ui`. Registration/reset/verify routes are disabled in `routes/web.php`.
@@ -77,11 +85,31 @@ Entity roles:
 - Settlement is separate from play: `orders.paid_at` (null = unpaid) is set by `POST /order/{uuid}/bayar`, where the cashier picks the payment method. An order cannot be settled while a session is still running.
 - Guards in `OrderItemController::update`: a free-time package can't start while a regular block is still running (`end_at > now()` → "Waktu belum habis"), and a regular package can't be added on top of a live free-time session ("Main bebas belum habis").
 
-`resources/views/livewire/active-order.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.
+`resources/views/livewire/meja-grid.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.
+
+### Fraud controls on order items
+
+A cashier must never be able to erase a bill for time already played. `OrderItemController::destroy` therefore:
+
+- refuses **time lines** unless the user is an admin (403). A time line is identified by `OrderItem::isBarisWaktu()` — `active_order_unique_id !== null`, i.e. the row is tied to an `active_orders` session; product type is only a fallback for pre-2022 rows;
+- refuses anything once `orders.paid_at` is set;
+- requires a `void_reason`, stored with `voided_by_uuid` **before** the soft delete, so a voided row stays accountable.
+
+Voided lines are rendered struck-through on the order page rather than vanishing, and every model change is mirrored into the Filament activity log (`config/filament-logger.php` → `models.register`, which shipped empty). Note the remaining hole that code cannot close: a cashier who simply never marks an order paid still pockets the cash — only a shift/cash reconciliation report catches that.
+
+### Free-time duration display
+
+`order_items.hour` on a free-time line holds the **package** number the admin typed (usually 1), not how long the customer played — showing it raw confuses cashier and customer alike. Use `OrderItem::labelDurasi()` on the order page and the receipt: it returns real elapsed time for free-time lines (`started_at` → `end_at` once closed, → `now()` while running) and falls back to `"{hour} Jam"` for regular blocks.
 
 ### Schema debts (verified against a production dump)
 
 `order_items` and `active_orders` were created **without a PRIMARY KEY**, and `order_items.uuid` has no index at all, even though both models declare `$primaryKey`. Migrations `2026_09_06_1800*` add the keys, backfill `hour_type`, add hot-path indexes, and make `orders.order_number` unique. They **abort with instructions** rather than run if duplicates exist — always `php artisan backup:database && php artisan db:integrity-check` first. The PK and `MODIFY ENUM` statements are MySQL-only and skip on sqlite so the test suite still runs.
+
+### Cashier dashboard
+
+One Livewire component, `MejaGrid`, renders **every** table — free and occupied — as a single card each. It used to be two components (`Product` + `ActiveOrder`), which made an occupied table appear twice on screen. Merging was also a hard requirement: a single card needs both the "Mulai" and "Selesai" actions, and Livewire actions cannot cross component boundaries.
+
+Card state comes from remaining minutes (`kosong` / `jalan` / `segera` ≤ 10 min / `habis` / `bebas`), exposed as `data-status` and always paired with a text badge — colour is never the only signal. Cards are ordered by name and never re-sorted by state, so a table stays in the same spot.
 
 ### Front-end constraints
 
@@ -93,7 +121,7 @@ Confirmations on `wire:click` buttons use an inline `onclick` that calls `event.
 
 ### Gotchas
 
-- **There is no `orders.total` column.** `Order::getTotalAttribute()` is a pure accessor over `orderItems->sum('price')`. It is deliberately absent from `$fillable`; writing it throws `Unknown column 'total'`. Same for `order_items.total`.
+- **There is no `orders.total` column.** `Order::getTotalAttribute()` is a pure accessor over `orderItems->sum('price')`. It is deliberately absent from `$fillable`; writing it throws `Unknown column 'total'`. Same for `order_items.total`. The accessor also **shadows any `total` alias** you select on a query that returns `Order` models — `selectRaw('SUM(...) as total')` silently reads back as 0. Alias it something else (`total_omzet`), as `App\Filament\Pages\Laporan` does.
 - `order_items.price` is the **total for that line**, not a unit price — for drinks it is `products.price * quantity`, for a time package it is `hours.price`, and for a free-time session it is the per-minute rate until `stopTimer()` overwrites it with the total. Always render money from this column, never from `products.price`, or reprinted receipts stop adding up.
 - `Product::getTypeAttribute()` returns `ucfirst($value)`. Queries use lowercase (`where('type', 'billiard')`, `scopeBilliard`), while `$product->type` in PHP/Blade reads `'Billiard'`. Compare against the DB value in queries and the accessor value in PHP.
 - `HasUuid` casts to string on purpose. `Str::uuid()` returns an object, so on the request that creates a model `$model->uuid` is an object while the same value read back is a string — `===` between them is false, which silently broke ownership checks.

@@ -12,7 +12,9 @@ class BackupDatabase extends Command
     protected $signature = 'backup:database
                             {--keep-local= : Simpan backup lokal berapa hari (default dari config)}
                             {--keep-cloud= : Simpan backup di Google Drive berapa hari (default dari config)}
-                            {--no-upload : Hanya dump ke lokal, jangan upload ke cloud}';
+                            {--no-upload : Hanya dump ke lokal, jangan upload ke cloud}
+                            {--telegram : Paksa kirim berkas backup ke Telegram}
+                            {--no-telegram : Jangan kirim ke Telegram walau diaktifkan di config}';
 
     protected $description = 'Dump database ke .sql.gz, upload ke Google Drive, lalu bersihkan backup lama';
 
@@ -44,14 +46,17 @@ class BackupDatabase extends Command
             }
         }
 
+        $terkirimTelegram = $this->kirimKeTelegram($path, $sizeMb);
+
         $this->prune();
 
         $duration = round(microtime(true) - $startedAt, 1);
         $summary = sprintf(
-            'Backup sukses: %s (%s MB) - upload: %s - durasi: %ss',
+            'Backup sukses: %s (%s MB) - upload: %s - telegram: %s - durasi: %ss',
             basename($path),
             $sizeMb,
             $uploaded ? 'ya' : 'tidak',
+            $terkirimTelegram ? 'ya' : 'tidak',
             $duration
         );
 
@@ -117,6 +122,48 @@ class BackupDatabase extends Command
         $this->info('Upload ke Google Drive selesai: '.basename($path));
 
         return true;
+    }
+
+    /**
+     * Mengirim berkas backup ke Telegram kalau diaktifkan.
+     *
+     * Kegagalan di sini TIDAK menggagalkan backup: dump lokal dan salinan Drive
+     * sudah aman, dan Telegram hanyalah salinan tambahan.
+     */
+    private function kirimKeTelegram(string $path, float $sizeMb): bool
+    {
+        $aktif = $this->option('telegram')
+            || (config('telegram.send_backup') && ! $this->option('no-telegram'));
+
+        if (! $aktif) {
+            return false;
+        }
+
+        $telegram = app(\App\Services\TelegramNotifier::class);
+
+        if (! $telegram->aktif()) {
+            $this->warn('Telegram belum dikonfigurasi, berkas backup tidak dikirim.');
+
+            return false;
+        }
+
+        try {
+            $telegram->kirimDokumen($path, sprintf(
+                '<b>Backup database</b>%s%s — %s MB',
+                PHP_EOL,
+                now()->format('d/m/Y H:i'),
+                $sizeMb
+            ));
+
+            $this->info('Berkas backup terkirim ke Telegram.');
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->warn('Gagal mengirim backup ke Telegram: '.$e->getMessage());
+            \Log::channel('daily')->warning('Backup Telegram gagal: '.$e->getMessage());
+
+            return false;
+        }
     }
 
     private function prune(): void

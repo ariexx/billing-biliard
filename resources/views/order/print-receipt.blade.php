@@ -30,7 +30,7 @@
                 <tr>
                     <td>
                         {{ $item->product?->name ?? 'Produk dihapus' }}
-                        @if($item->hour) - {{ $item->hour }} Jam @endif
+                        @if($item->hour || $item->durasiMenit() !== null) - {{ $item->labelDurasi() }} @endif
                     </td>
                     <td>{{ $item->quantity }}</td>
                     <td>{{ rupiah((int) round($item->price / max($item->quantity, 1))) }}</td>

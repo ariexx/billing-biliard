@@ -9,6 +9,39 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    /**
+     * Pencarian cepat untuk kasir: nomor order, atau nama meja yang sedang
+     * dipakai. Sebelumnya satu-satunya cara menemukan order adalah menggulir
+     * tabel riwayat.
+     */
+    public function cari(Request $request)
+    {
+        $q = trim((string) $request->query('q'));
+
+        if ($q === '') {
+            return redirect()->route('home');
+        }
+
+        $query = Order::with('orderItems.product', 'user')
+            ->where(function ($cari) use ($q) {
+                $cari->where('order_number', 'like', "%{$q}%")
+                    // Nama meja dicari lewat sesi yang tercatat pada order ini.
+                    ->orWhereHas('activeOrders.product', fn ($p) => $p->where('name', 'like', "%{$q}%"));
+            });
+
+        if (auth()->user()?->role !== 'admin') {
+            $query->where('user_uuid', auth()->id());
+        }
+
+        $hasil = $query->orderByDesc('created_at')->limit(25)->get();
+
+        if ($hasil->count() === 1) {
+            return redirect()->route('order.view', $hasil->first()->uuid);
+        }
+
+        return view('order.cari', ['hasil' => $hasil, 'q' => $q]);
+    }
+
     public function view($uuid)
     {
         $order = Order::with('orderItems.activeOrder', 'orderItems.product', 'user', 'payment')
@@ -17,7 +50,14 @@ class OrderController extends Controller
 
         $this->authorize('view', $order);
 
-        return view('order.view', compact('order'));
+        // Item yang dibatalkan tetap ditampilkan (dicoret), bukan lenyap begitu
+        // saja -- supaya pembatalan terlihat oleh siapa pun yang membuka order.
+        $dibatalkan = $order->orderItems()
+            ->onlyTrashed()
+            ->with('product', 'voidedBy')
+            ->get();
+
+        return view('order.view', compact('order', 'dibatalkan'));
     }
 
     /**

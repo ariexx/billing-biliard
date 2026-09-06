@@ -208,7 +208,7 @@ class InstallTest extends TestCase
         $jam = Hour::where('type', 'regular')->first();
 
         \Livewire\Livewire::actingAs($kasir)
-            ->test(\App\Http\Livewire\Product::class)
+            ->test(\App\Http\Livewire\MejaGrid::class)
             ->set('selectedHours', [$meja->uuid => $jam->uuid])
             ->call('saveOrder', $meja->uuid);
 

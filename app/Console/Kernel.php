@@ -18,6 +18,12 @@ class Kernel extends ConsoleKernel
         // Dijalankan oleh `php artisan schedule:work` yang di-start dari start.bat.
         // Mesin kasir Windows tidak punya cron, jadi jadwal hanya hidup selama
         // aplikasi hidup — karena itu jamnya dipilih di dalam jam operasional.
+        // Tiap jam, bukan sekali di jam kirim: kalau PC kasir sedang mati saat
+        // jatuh tempo, rekapnya dikirim susulan begitu aplikasi hidup lagi.
+        $schedule->command('rekap:telegram')
+            ->hourly()
+            ->withoutOverlapping();
+
         $schedule->command('orders:expire-sessions')
             ->everyMinute()
             ->withoutOverlapping();

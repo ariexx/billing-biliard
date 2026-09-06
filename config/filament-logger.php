@@ -34,8 +34,15 @@ return [
         'log_name' => 'Model',
         'color' => 'warning',
         'logger' => \Z3d0X\FilamentLogger\Loggers\ModelLogger::class,
+        // Perubahan pada data uang harus terlihat di panel admin, bukan hanya
+        // mengendap di berkas log yang tidak pernah dibuka siapa pun.
         'register' => [
-            //App\Models\User::class,
+            App\Models\Order::class,
+            App\Models\OrderItem::class,
+            App\Models\Product::class,
+            App\Models\Hour::class,
+            App\Models\Payment::class,
+            App\Models\User::class,
         ],
     ],
 

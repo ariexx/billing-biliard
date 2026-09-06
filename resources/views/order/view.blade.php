@@ -63,26 +63,65 @@
                                 <td>{{$item->product?->name ?? 'Produk dihapus'}}</td>
                                 <td>{{rupiah((int) round($item->price / max($item->quantity, 1)))}}</td>
                                 <td>{{$item->quantity}}</td>
-                                <td>{{$item->hour ?? '-'}}</td>
+                                {{-- Main bebas menampilkan lama main sebenarnya, bukan angka paket admin. --}}
+                                <td>{{$item->labelDurasi()}}</td>
                                 <td>{{$item->activeOrder->started_at ?? '-'}}</td>
                                 <td>{{$item->activeOrder->end_at ?? '-'}}</td>
                                 <td class="text-end">{{rupiah($item->price)}}</td>
                                 <td>
-                                    @unless($order->is_paid)
-                                    <form action="{{route('order-item.destroy', $item->uuid)}}" method="POST"
-                                          onsubmit="return confirm('Hapus item {{ $item->product?->name }}?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            <i class="fa fa-trash"></i>
-                                        </button>
-                                    </form>
-                                    @endunless
+                                    @php
+                                        // Baris waktu meja hanya boleh dibatalkan admin: menghapusnya
+                                        // menghilangkan tagihan atas waktu yang sudah dimainkan.
+                                        $bolehBatal = ! $order->is_paid
+                                            && (! $item->isBarisWaktu() || auth()->user()->role === 'admin');
+                                    @endphp
+
+                                    @if($bolehBatal)
+                                        <details>
+                                            <summary class="btn btn-sm btn-outline-danger">
+                                                <i class="fa fa-trash"></i>
+                                            </summary>
+                                            <form action="{{route('order-item.destroy', $item->uuid)}}" method="POST"
+                                                  class="mt-2"
+                                                  onsubmit="return confirm('Batalkan {{ $item->product?->name }} senilai {{ rupiah($item->price) }}?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="text" name="void_reason" class="form-control form-control-sm mb-1"
+                                                       placeholder="Alasan pembatalan" minlength="4" required>
+                                                <button type="submit" class="btn btn-sm btn-danger w-100">Batalkan</button>
+                                            </form>
+                                        </details>
+                                    @elseif($item->isBarisWaktu() && ! $order->is_paid)
+                                        <span class="text-muted small" title="Hanya admin yang bisa membatalkan baris waktu">
+                                            <i class="fa fa-lock"></i>
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
                     </table></div>
+                    @if($dibatalkan->isNotEmpty())
+                        <div class="alert alert-secondary">
+                            <b>Item dibatalkan</b>
+                            <table class="table table-sm mb-0 mt-2">
+                                <tbody>
+                                @foreach($dibatalkan as $batal)
+                                    <tr>
+                                        <td><s>{{ $batal->product?->name ?? 'Produk dihapus' }}</s></td>
+                                        <td><s>{{ rupiah($batal->price) }}</s></td>
+                                        <td>{{ $batal->void_reason ?? '-' }}</td>
+                                        <td class="text-muted">
+                                            {{ $batal->voidedBy?->name ?? '-' }}
+                                            &middot; {{ $batal->deleted_at?->format('d/m H:i') }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+
                     <p>
                         <strong>Total: {{rupiah($order->total)}}</strong>
                     </p>
