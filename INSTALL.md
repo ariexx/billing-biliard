@@ -277,6 +277,22 @@ punya password kosong — coba dikosongkan.
 Nama printer di `.env` (`PRINTER=`) harus sama persis dengan nama di Windows,
 termasuk spasi dan huruf besar-kecil.
 
+**`Failed to listen` padahal port jelas kosong (khusus cmd/PowerShell)**
+Pada sebagian mesin Windows, `php artisan serve` gagal bind dari cmd/PowerShell
+tetapi berjalan normal dari **Git Bash** — dengan binari PHP dan php.ini yang
+sama persis. Penyebabnya ada di sesi console, bukan di aplikasi (biasanya
+antivirus/EDR yang memperlakukan proses berbeda tergantung induknya).
+
+Jalan keluarnya: jalankan lewat Git Bash.
+
+```bash
+./start.sh          # port 8000
+./start.sh 8080     # port lain
+```
+
+`start.sh` melakukan hal yang sama dengan `start.bat`, dan ikut mematikan
+scheduler saat dihentikan dengan Ctrl+C.
+
 **Muncul berulang kali `Failed to listen on 127.0.0.1:8000`**
 Port 8000 sedang dipakai program lain, atau aplikasi ini sudah berjalan di
 jendela lain. Coba buka http://localhost:8000 dulu. Kalau memang bukan, lihat
