@@ -34,10 +34,14 @@ Route::group(['middleware' => 'auth'], function () {
     //order view
     Route::get('/order/{uuid}', [\App\Http\Controllers\OrderController::class, 'view'])
         ->name('order.view');
-    Route::get('/order/{uuid}/edit', [\App\Http\Controllers\OrderController::class, 'edit'])
-        ->name('order.edit');
-    //    Route::put('/order/{uuid}/update', [\App\Http\Controllers\OrderController::class, 'update'])
-    //        ->name('order.update');
+    // order.edit dihapus: view-nya memanggil route('order.update') yang tidak
+    // pernah didaftarkan (RouteNotFoundException / 500) dan templatenya terpotong
+    // tanpa @endforeach maupun tombol submit. Penyuntingan item order sudah
+    // ditangani order-item.edit.
+
+    Route::post('/order/{uuid}/bayar', [\App\Http\Controllers\OrderController::class, 'bayar'])
+        ->name('order.bayar');
+
     Route::get('/order/{uuid}/pindah-meja', [\App\Http\Controllers\OrderController::class, 'pindahMeja'])
         ->name('order.pindah-meja');
 

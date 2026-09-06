@@ -54,6 +54,14 @@ return [
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
+            /*
+             * Dipatok eksplisit. Tanpa ini PDO tidak pernah mengirim SET time_zone
+             * dan sesi mewarisi time_zone global MySQL (default SYSTEM). Kolom
+             * TIMESTAMP dikonversi memakai zona sesi itu sedangkan started_at dan
+             * end_at yang bertipe DATETIME tidak -- begitu zona server berubah,
+             * seluruh riwayat omzet bergeser 7 jam sementara jam main tidak.
+             */
+            'timezone' => env('DB_TIMEZONE', '+07:00'),
             'prefix' => '',
             'prefix_indexes' => true,
             'strict' => true,

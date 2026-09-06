@@ -6,19 +6,19 @@
             <div class="card">
                 <div class="card-header">Pindah Meja Billiard</div>
                 <div class="card-body">
-                    <form action="{{route('order.pindah-meja', $order->uuid)}}" method="POST">
+                    <form action="{{route('order.pindah-meja', $order->uuid)}}" method="POST" onsubmit="return confirm('Yakin pindah meja?')">
                         @csrf
                         @method('PUT')
                         <div class="form-group">
                             <label for="table">Select New Table:</label>
-                            <select class="form-select" id="table" name="table_uuid">
+                            <select class="form-select" id="table" name="table_uuid" required>
                                 <option value="">Select Table</option>
                                 @foreach($tables as $table)
                                     <option value="{{$table->uuid}}">{{$table->name}}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-3" onclick="confirm('Yakin ?')">Pindah Meja</button>
+                        <button type="submit" class="btn btn-primary mt-3">Pindah Meja</button>
                     </form>
                 </div>
             </div>

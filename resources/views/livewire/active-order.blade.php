@@ -20,7 +20,12 @@
                                     Lihat Detail Order
                                 </a>
                             </p>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="habiskanWaktu('{{$order->unique_id}}')">
+                            {{-- stopImmediatePropagation menahan listener Livewire yang
+                                 terpasang pada elemen yang sama. Tanpa konfirmasi, satu
+                                 salah klik mengakhiri meja pelanggan tanpa bisa dibatalkan. --}}
+                            <button class="btn btn-danger btn-sm mt-2"
+                                    onclick="if (!confirm('Habiskan waktu meja {{ $order->product?->name }}?')) { event.stopImmediatePropagation(); event.preventDefault(); }"
+                                    wire:click.prevent="habiskanWaktu('{{$order->unique_id}}')">
                                 Habiskan
                             </button>
                         </div>
@@ -32,29 +37,37 @@
                         <div class="card-body">
                             <h5 class="card-title"><b>{{ $order->product->name }}</b></h5>
                             <h6 class="card-subtitle mb-2 text-muted">Main bebas</h6>
-                            <b>
-                                <x-countdown :expires="$order->end_at">
-                                    <span x-text="timer.hours">{{ $component->hours() }}</span> hours
-                                    <span x-text="timer.minutes">{{ $component->minutes() }}</span> minutes
-                                    <span x-text="timer.seconds">{{ $component->seconds() }}</span> seconds
-                                </x-countdown>
-                            </b>
+                            {{-- Countdown ke end_at tidak bermakna untuk sesi terbuka:
+                                 setelah lewat, widget-nya diam-diam berubah jadi waktu
+                                 berjalan dengan label yang sama. Yang dibutuhkan kasir
+                                 adalah lama main dan tagihan sampai detik ini. --}}
+                            <p class="mb-1">
+                                Sudah main
+                                <b>{{ intdiv($order->menit_berjalan, 60) }}j {{ $order->menit_berjalan % 60 }}m</b>
+                            </p>
+                            <p class="mb-2">
+                                Tagihan sekarang: <b>{{ rupiah($order->tagihan_berjalan) }}</b>
+                            </p>
                             <p class="mb-2">
                                 <a href="{{ route('order.view', $order->order_uuid) }}" class="text-sm-left text-muted" style="text-decoration: none;" target="_blank">
                                     Lihat Detail Order
                                 </a>
                             </p>
-                            <button class="btn btn-danger btn-sm mt-2" wire:click.prevent="stopTimer('{{ $order->order_uuid }}', '{{$order->unique_id}}')">
+                            <button class="btn btn-danger btn-sm mt-2"
+                                    wire:loading.attr="disabled"
+                                    wire:target="stopTimer('{{ $order->order_uuid }}', '{{$order->unique_id}}')"
+                                    onclick="if (!confirm('Selesaikan sesi main bebas meja {{ $order->product?->name }}? Tagihan akan dihitung sekarang.')) { event.stopImmediatePropagation(); event.preventDefault(); }"
+                                    wire:click.prevent="stopTimer('{{ $order->order_uuid }}', '{{$order->unique_id}}')">
                                 Selesai
                             </button>
                         </div>
                     </div>
                 </div>
-            @else
-                @php
-                    $order->update(['is_active' => false]);
-                @endphp
             @endif
+            {{-- Blok @else lama menulis ke database dari dalam template
+                 ($order->update(['is_active' => false])) pada setiap poll.
+                 Sekarang ditangani command orders:expire-sessions lewat scheduler,
+                 supaya sesi tetap kadaluarsa walau tidak ada browser yang terbuka. --}}
         @endforeach
     </div>
 </div>

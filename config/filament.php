@@ -139,8 +139,10 @@ return [
         'namespace' => 'App\\Filament\\Widgets',
         'path' => app_path('Filament/Widgets'),
         'register' => [
+            \App\Filament\Widgets\RingkasanHariIni::class,
+            \App\Filament\Widgets\OmzetTujuhHari::class,
+            \App\Filament\Widgets\MejaAktif::class,
             Widgets\AccountWidget::class,
-            Widgets\FilamentInfoWidget::class,
         ],
     ],
 

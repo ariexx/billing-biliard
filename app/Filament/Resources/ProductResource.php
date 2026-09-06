@@ -18,7 +18,13 @@ class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-cash';
+    protected static ?string $navigationIcon = 'heroicon-o-cube';
+
+    protected static ?string $navigationGroup = 'Master Data';
+
+    protected static ?int $navigationSort = 1;
+
+    protected static ?string $navigationLabel = 'Produk & Meja';
 
     public static function form(Form $form): Form
     {
@@ -65,8 +71,11 @@ class ProductResource extends Resource
                     ->label('Hours')
                     ->placeholder('Select hours')
                     ->options(Hour::orderBy('hour', 'asc')->get()->pluck('name', 'uuid'))
-                    ->rules(['array', 'accepted_if:type,billiard'])
-                    ->helperText('Jika tipe billiard, pilih jam yang tersedia.'),
+                    // 'accepted_if' pada sebuah array selalu gagal: rule itu untuk
+                    // checkbox, dan efeknya justru menolak produk bertipe billiard.
+                    ->rules(['array'])
+                    ->required(fn (\Closure $get) => $get('type') === 'billiard')
+                    ->helperText('Wajib diisi untuk tipe billiard: paket jam yang bisa dipilih kasir.'),
             ]);
     }
 

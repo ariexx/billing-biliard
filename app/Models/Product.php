@@ -39,15 +39,6 @@ class Product extends Model
             ->withTimestamps();
     }
 
-    public function hourPrice(): BelongsToMany
-    {
-        return $this->belongsToMany(Hour::class, 'hours_to_products',
-            'product_uuid',
-            'hour_uuid')
-            ->withPivot('price')
-            ->withTimestamps();
-    }
-
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);

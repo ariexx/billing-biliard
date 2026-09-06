@@ -9,18 +9,26 @@ Point-of-sale / billing app for a billiard hall ("Black Dragon Pool"). Cashiers 
 ## Commands
 
 ```powershell
-php artisan serve            # dev server (start.bat runs exactly this)
+start.bat                    # what the shop actually runs: schedule:work + serve
+php artisan serve            # dev server alone
 npm run dev                  # Vite dev server (sass/app.scss + js/app.js)
 npm run build                # production assets
 php artisan migrate --seed   # schema + Admin/Cashier users (DatabaseSeeder)
 vendor/bin/pint              # formatter (Laravel Pint)
-php artisan test             # or vendor/bin/phpunit
-php artisan test --filter=SomeTest
+php artisan test             # sqlite :memory:, safe to run
+php artisan test --filter=BillingTest
+
+php artisan backup:database       # dump .sql.gz -> Google Drive (--no-upload for local only)
+php artisan gdrive:authorize      # one-time OAuth -> refresh token for .env
+php artisan db:integrity-check    # pre-migration duplicate scan (--fix to repair)
+php artisan orders:expire-sessions
 ```
 
-Tests: `phpunit.xml` leaves `DB_CONNECTION`/`:memory:` commented out, so the suite hits the **real configured MySQL database**. Uncomment those lines before writing DB-touching tests. Only the stock `ExampleTest` stubs exist today.
+`.env` needs `PRINTER` (Windows printer name, e.g. `POS-80C`), `RECEIPTPRINTER_PAPER_SIZE`, and the `GOOGLE_DRIVE_*` / `BACKUP_*` keys listed in `.env.example`.
 
-`.env` needs `PRINTER` (Windows printer name, e.g. `POS-80C`) and `RECEIPTPRINTER_PAPER_SIZE`.
+**Windows has no cron**, so `start.bat` launches `php artisan schedule:work` in a second window alongside `php artisan serve`. Close that window and backups and session expiry stop. Backup times are inside opening hours (`BACKUP_SCHEDULE_HOURS`, default 13:00 & 21:00) because the PC is off overnight.
+
+Backups use `ifsnop/mysqldump-php`, not `spatie/laravel-backup`: the `mysqldump` binary is not on PATH on the shop PC.
 
 ## Two front ends
 
@@ -52,16 +60,24 @@ Entity roles:
 
 `hour_type` drives everything, split across `Http\Livewire\Product::saveOrder`, `Http\Livewire\ActiveOrder`, and `OrderItemController::update`:
 
-- **regular** — prepaid block. `end_at = now() + hour`, the order item is priced at `hour->price` up front. Adding another regular package *extends* the existing active order (`hour += `, `end_at->addHours()`), it does not create a new row.
-- **free time** — open-ended play. `ActiveOrder::stopTimer()` closes it and rewrites the item price as `started_at->diffInMinutes(now()) * orderItem->price`, i.e. the stored price is a **per-minute rate** until the session ends, and a **total** afterwards.
+- **regular** — prepaid block. `end_at = now() + hour`, the order item is priced at `hour->price` up front. Adding another regular package *extends* the existing session, basing the new end on `max(now(), end_at)` so a lapsed block doesn't get extended into the past.
+- **free time** — open-ended play, billed **per minute**: `hours.price` for a free-time package is the rate per minute, so `order_items.price` holds that rate until `ActiveOrder::stopTimer()` closes the session and overwrites it with `minutes * rate`. `stopTimer` filters on `is_active` and locks the row — without that a second click re-multiplies a value that is already the total.
+- Settlement is separate from play: `orders.paid_at` (null = unpaid) is set by `POST /order/{uuid}/bayar`, where the cashier picks the payment method. An order cannot be settled while a session is still running.
 - Guards in `OrderItemController::update`: a free-time package can't start while a regular block is still running (`end_at > now()` → "Waktu belum habis"), and a regular package can't be added on top of a live free-time session ("Main bebas belum habis").
 
-`resources/views/livewire/active-order.blade.php` polls every 10s and, in its `@else` branch, **writes to the database from the template** (`$order->update(['is_active' => false])`) to expire finished regular blocks. There is no scheduler/queue job doing this — the dashboard has to be open. Keep that in mind before "cleaning up" that view.
+`resources/views/livewire/active-order.blade.php` polls every 10s to render the cards. Expiring finished regular blocks is the job of `orders:expire-sessions` (scheduled every minute) — **not** the view; it used to be an `$order->update()` inside an `@else` branch, which meant sessions only expired while a browser was open. Free-time sessions are deliberately never auto-expired: closing one has to go through `stopTimer()` so it gets billed.
 
-### Two accessor gotchas
+### Schema debts (verified against a production dump)
 
-- `Order::getTotalAttribute()` shadows the `orders.total` column and always recomputes `orderItems->sum('price')`. Writing `total` has no visible effect.
-- `Product::getTypeAttribute()` returns `ucfirst($value)`. So queries use lowercase (`where('type', 'billiard')`, `scopeBilliard`) while anything reading `$product->type` in PHP/Blade must compare against `'Billiard'` — see `order/print-receipt.blade.php`.
+`order_items` and `active_orders` were created **without a PRIMARY KEY**, and `order_items.uuid` has no index at all, even though both models declare `$primaryKey`. Migrations `2026_09_06_1800*` add the keys, backfill `hour_type`, add hot-path indexes, and make `orders.order_number` unique. They **abort with instructions** rather than run if duplicates exist — always `php artisan backup:database && php artisan db:integrity-check` first. The PK and `MODIFY ENUM` statements are MySQL-only and skip on sqlite so the test suite still runs.
+
+### Gotchas
+
+- **There is no `orders.total` column.** `Order::getTotalAttribute()` is a pure accessor over `orderItems->sum('price')`. It is deliberately absent from `$fillable`; writing it throws `Unknown column 'total'`. Same for `order_items.total`.
+- `order_items.price` is the **total for that line**, not a unit price — for drinks it is `products.price * quantity`, for a time package it is `hours.price`, and for a free-time session it is the per-minute rate until `stopTimer()` overwrites it with the total. Always render money from this column, never from `products.price`, or reprinted receipts stop adding up.
+- `Product::getTypeAttribute()` returns `ucfirst($value)`. Queries use lowercase (`where('type', 'billiard')`, `scopeBilliard`), while `$product->type` in PHP/Blade reads `'Billiard'`. Compare against the DB value in queries and the accessor value in PHP.
+- `HasUuid` casts to string on purpose. `Str::uuid()` returns an object, so on the request that creates a model `$model->uuid` is an object while the same value read back is a string — `===` between them is false, which silently broke ownership checks.
+- `Order::activeOrder()` is a `HasOne` but an order can own several `active_orders` rows (a free-time session appends one). Use `currentSession()` or `activeOrders()` for anything behavioural; the `HasOne` returns an arbitrary row.
 
 ## Printing
 
