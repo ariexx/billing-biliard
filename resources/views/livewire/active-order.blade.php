@@ -38,8 +38,18 @@
                                 <p class="text-danger mb-2"><b>Waktu habis</b></p>
                             @else
                                 <p class="mb-1 text-muted small">Sisa waktu</p>
+                                {{-- Alpine (v2, dimuat oleh @bukScripts) membuat angka ini
+                                     berdetak tiap detik; isi di dalamnya adalah nilai
+                                     render server, jadi tetap benar kalau CDN Alpine
+                                     tidak bisa dihubungi. --}}
                                 <p class="fs-4 mb-2">
-                                    <b>{{ intdiv($sisaMenit, 60) }}j {{ $sisaMenit % 60 }}m</b>
+                                    <b>
+                                        <x-countdown :expires="$order->end_at">
+                                            <span x-text="timer.hours">{{ $component->hours() }}</span>j
+                                            <span x-text="timer.minutes">{{ $component->minutes() }}</span>m
+                                            <span x-text="timer.seconds">{{ $component->seconds() }}</span>d
+                                        </x-countdown>
+                                    </b>
                                 </p>
                                 <div class="progress mb-2" style="height: 6px;">
                                     <div class="progress-bar {{ $persen < 20 ? 'bg-danger' : 'bg-success' }}"

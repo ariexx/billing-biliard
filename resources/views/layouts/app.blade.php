@@ -17,6 +17,10 @@
         integrity="sha512-MV7K8+y+gLIBoVD59lQIYicR65iaqukzvf/nwasF0nqhPay5w/9lJmVM2hMDcnK1OnMGCdVK+iQrJ7lzPJQd1w=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     @stack('css')
+    {{-- WAJIB. Direktif ini yang mengeluarkan aturan [wire:loading]{display:none}.
+         Tanpa itu setiap elemen wire:loading terlihat terus, sehingga tombol
+         menampilkan label normal dan label "Memproses..." sekaligus. --}}
+    @livewireStyles
     <!-- Scripts -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
     @bukStyles(true)

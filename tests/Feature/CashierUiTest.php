@@ -81,15 +81,14 @@ class CashierUiTest extends TestCase
     /** @test */
     public function kartu_meja_reguler_menampilkan_sisa_waktu_terhitung_server(): void
     {
-        // Alpine tidak dimuat di aplikasi ini, jadi <x-countdown> tidak pernah
-        // berdetak. Sisa waktu sekarang dirender server.
+        // Angka di dalam <x-countdown> adalah hasil render server, jadi tetap
+        // benar walau Alpine gagal dimuat dari CDN.
         $this->sesi($this->meja('Meja 1'), 'regular', 30, 90, 50000);
 
         Livewire::test(\App\Http\Livewire\ActiveOrder::class)
             ->assertSuccessful()
             ->assertSee('Sisa waktu')
-            ->assertSee('1j 30m')
-            ->assertDontSee('x-text');
+            ->assertSee('x-text', false);
     }
 
     /** @test */

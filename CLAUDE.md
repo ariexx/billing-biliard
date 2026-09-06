@@ -73,7 +73,9 @@ Entity roles:
 
 ### Front-end constraints
 
-**Alpine.js is not loaded anywhere** — not in `resources/js/app.js`, not in `package.json`, not in the built bundle, and Livewire 2 does not bundle it. So `blade-ui-kit`'s `<x-countdown>` (`x-data`/`x-text`) never ticked; it rendered static server values. All time displays on the cashier dashboard are therefore computed server-side and refreshed by the existing `wire:poll.10000ms`. Don't reintroduce Alpine-dependent components without adding Alpine first.
+**`@livewireStyles` must stay in the layout head.** It is the only thing that emits `[wire\:loading]{display:none}`. The layout shipped without it, so every `wire:loading` element rendered permanently visible — a button with `wire:loading.remove` and `wire:loading` spans showed *both* labels at once ("Mulai" and "Memproses…" side by side). Verified in Chrome: with the directive present a `wire:loading` element computes to `display: none` at rest.
+
+**Alpine comes from `@bukScripts(true)`**, not from `app.js` or `package.json` — blade-ui-kit pulls Alpine **v2** off a CDN at the bottom of the layout. That is what makes `<x-countdown>` (`x-data`/`x-text`) tick. Two consequences: the syntax is Alpine 2, not 3; and if that CDN is unreachable the countdown freezes at whatever is inside it, so always put a correct server-rendered value inside `<x-countdown>` rather than an empty placeholder.
 
 Confirmations on `wire:click` buttons use an inline `onclick` that calls `event.stopImmediatePropagation()` when the user cancels. This is verified in Chrome to block Livewire's handler in both of its listener strategies (same-element and delegated), because attribute handlers are registered at parse time, before Livewire initialises. Livewire 2 has no `wire:confirm`.
 
