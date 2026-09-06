@@ -15,15 +15,15 @@ class ManageOrders extends ManageRecords
         return $data;
     }
 
-    protected function mutateFormDataBeforeSave(array $data): array
-    {
-        //sum all order items
-        $data['total'] = 0;
-        foreach ($data['order_items'] as $orderItem) {
-            $data['total'] += $orderItem['price'] * $orderItem['quantity'];
-        }
-        return $data;
-    }
+    /*
+     * mutateFormDataBeforeSave() dihapus. Method itu menulis $data['total'] ke
+     * tabel orders yang tidak punya kolom total (Unknown column 'total' pada
+     * setiap simpan), dan mengiterasi $data['order_items'] -- key yang tidak
+     * pernah ada karena repeater-nya bernama 'orderItems' dan berbasis relasi,
+     * sehingga selalu dilepas dari $data sebelum sampai ke sini.
+     *
+     * Total order dihitung oleh App\Models\Order::getTotalAttribute().
+     */
 
     protected function getActions(): array
     {

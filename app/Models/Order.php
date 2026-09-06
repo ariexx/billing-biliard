@@ -18,11 +18,15 @@ class Order extends Model
     protected $keyType = 'string';
     public $incrementing = false;
 
+    /**
+     * 'total' sengaja TIDAK ada di sini: tidak ada kolom total di tabel orders.
+     * Nilainya dihitung oleh getTotalAttribute(). Mass-assign 'total' hanya
+     * menghasilkan "Unknown column 'total'".
+     */
     protected $fillable = [
         'order_number',
         'user_uuid',
         'payment_uuid',
-        'total',
         'print_count'
     ];
 
@@ -30,9 +34,44 @@ class Order extends Model
     {
         parent::boot();
         static::creating(function ($model) {
-            $model->user_uuid = auth()->id();
-            $model->order_number = 'ORD-'.date('Ymd').'-'.rand(1000, 9999);
+            $model->user_uuid = (string) auth()->id();
+
+            if (empty($model->order_number)) {
+                $model->order_number = static::generateOrderNumber();
+            }
         });
+    }
+
+    /**
+     * Nomor urut harian: ORD-20260906-0001.
+     *
+     * Menggantikan rand(1000,9999) yang keyspace-nya hanya 9000 per hari sehingga
+     * tabrakan nyaris pasti terjadi dalam hitungan hari. UNIQUE index pada kolom
+     * ini adalah pengaman terakhirnya.
+     */
+    public static function generateOrderNumber(): string
+    {
+        $prefix = 'ORD-'.date('Ymd').'-';
+
+        for ($percobaan = 0; $percobaan < 10; $percobaan++) {
+            $terakhir = static::withTrashed()
+                ->where('order_number', 'like', $prefix.'%')
+                ->orderByDesc('order_number')
+                ->value('order_number');
+
+            $urutan = $terakhir
+                ? ((int) substr($terakhir, strlen($prefix))) + 1
+                : 1;
+
+            $kandidat = $prefix.str_pad((string) $urutan, 4, '0', STR_PAD_LEFT);
+
+            if (! static::withTrashed()->where('order_number', $kandidat)->exists()) {
+                return $kandidat;
+            }
+        }
+
+        // Sangat jarang: dipakai kalau 10 percobaan berturut-turut bentrok.
+        return $prefix.now()->format('His').random_int(100, 999);
     }
 
     public function getTotalAttribute()

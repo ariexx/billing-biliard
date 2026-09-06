@@ -59,11 +59,11 @@
                         </div>
                     </div>
                 </div>
-            @else
-                @php
-                    $order->update(['is_active' => false]);
-                @endphp
             @endif
+            {{-- Blok @else lama menulis ke database dari dalam template
+                 ($order->update(['is_active' => false])) pada setiap poll.
+                 Sekarang ditangani command orders:expire-sessions lewat scheduler,
+                 supaya sesi tetap kadaluarsa walau tidak ada browser yang terbuka. --}}
         @endforeach
     </div>
 </div>

@@ -18,6 +18,10 @@ class Kernel extends ConsoleKernel
         // Dijalankan oleh `php artisan schedule:work` yang di-start dari start.bat.
         // Mesin kasir Windows tidak punya cron, jadi jadwal hanya hidup selama
         // aplikasi hidup — karena itu jamnya dipilih di dalam jam operasional.
+        $schedule->command('orders:expire-sessions')
+            ->everyMinute()
+            ->withoutOverlapping();
+
         foreach (config('backup.schedule_hours') as $hour) {
             $schedule->command('backup:database')
                 ->dailyAt(sprintf('%02d:00', $hour))

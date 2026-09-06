@@ -38,36 +38,31 @@ class OrderResource extends Resource
                             ->options(fn() => Product::all()->pluck('name', 'uuid'))
                             ->reactive()
                             ->afterStateUpdated(function (\Closure $set, $state) {
-                                $product = Product::with('hours')->whereUuid($state)->firstOrFail();
-                                //check if the product has hours
-                                if ($product->hours->count() > 0) {
-                                    $price = $set('price', $product->hours->first()->price);
-                                } else {
-                                    $price = $set('price', $product->price);
+                                // Harga diisikan sebagai saran; kasir/admin tetap
+                                // bisa mengubahnya. Versi lama menyimpan harga di
+                                // session() -- $set() mengembalikan null, jadi yang
+                                // tersimpan selalu null dan bocor antar request.
+                                $product = Product::with('hours')->whereUuid($state)->first();
+
+                                if (! $product) {
+                                    return;
                                 }
-                                session()->put('price', $price);
+
+                                $set('price', $product->hours->first()?->price ?? $product->price);
                             })
                             ->required()
                             ->rules(['required', 'string', 'exists:products,uuid']),
                         Forms\Components\TextInput::make('quantity')
                             ->required()
-                            ->reactive()
-                            ->afterStateUpdated(function (\Closure $set, $state) {
-                                $totalPrice = $state * session()->get('price');
-                                session('totalPrice', $totalPrice);
-                                $set('price', $totalPrice);
-                                $set('total', $totalPrice);
-                            })
-                            ->rules(['required', 'numeric']),
+                            ->numeric()
+                            ->minValue(1)
+                            ->rules(['required', 'integer', 'min:1']),
+                        // Field 'total' dihapus: order_items tidak punya kolom total.
                         Forms\Components\TextInput::make('price')
+                            ->label('Harga (total baris)')
                             ->numeric()
-                            ->dehydrated()
-                            ->disabled(),
-                        //make the total price is latest
-                        Forms\Components\TextInput::make('total')
-                            ->numeric()
-                            ->dehydrated()
-                            ->disabled(),
+                            ->required()
+                            ->rules(['required', 'integer', 'min:0']),
                     ])
                     ->columnSpan(2)
                     ->columns(2),
