@@ -15,7 +15,15 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Dijalankan oleh `php artisan schedule:work` yang di-start dari start.bat.
+        // Mesin kasir Windows tidak punya cron, jadi jadwal hanya hidup selama
+        // aplikasi hidup — karena itu jamnya dipilih di dalam jam operasional.
+        foreach (config('backup.schedule_hours') as $hour) {
+            $schedule->command('backup:database')
+                ->dailyAt(sprintf('%02d:00', $hour))
+                ->withoutOverlapping()
+                ->runInBackground();
+        }
     }
 
     /**
