@@ -138,6 +138,19 @@ Confirmations on `wire:click` buttons use an inline `onclick` that calls `event.
 - `HasUuid` casts to string on purpose. `Str::uuid()` returns an object, so on the request that creates a model `$model->uuid` is an object while the same value read back is a string — `===` between them is false, which silently broke ownership checks.
 - `Order::activeOrder()` is a `HasOne` but an order can own several `active_orders` rows (a free-time session appends one). Use `currentSession()` or `activeOrders()` for anything behavioural; the `HasOne` returns an arbitrary row.
 
+## Cashier history screens
+
+`/order-history` (biliar) and `/order-history/drinks` share one shape: a date-range form (`dari`/`sampai`, default today), KPI cards, a table, and a server-side Excel export. `HomeController::rentang()` parses the range — unparseable input falls back to today, and a reversed range is swapped rather than returning a silently empty report.
+
+Two things that were wrong before and must stay fixed:
+
+- **The table and the KPI cards must cover the same period.** The cards used to say "hari ini" above a table holding the entire history, so the numbers on top and the list below told different stories. `OrdersDataTable::html()` therefore sets `->ajax(url()->full())` so the range travels with the AJAX request, and `query()` reads it back through `HomeController::rentang()`.
+- **Role scoping applies to the export too**, not just the view — otherwise a cashier downloads every cashier's orders straight from the export URL.
+
+Client-side DataTables export buttons stay off (the Buttons plugin is not reliably loaded — that is why `dom('Bfrtip')` was commented out originally); export is a server route using `maatwebsite/excel`. The drinks screen counts `drink`, `snack` **and** `other`; it used to count only `drink`, so snacks sold at the same till appeared nowhere.
+
+`AppServiceProvider` calls `Paginator::useBootstrapFive()`. Without it Laravel emits Tailwind pagination markup into this Bootstrap app.
+
 ## Printing
 
 `POST /print` → `PrintController` bumps `orders.print_count`, writes a line to the `daily` log channel, and returns `order/print-receipt.blade.php`, which renders through `layouts/print` — a CSS-only 80mm receipt printed from the browser. `charlieuki/receiptprinter` and `config/receiptprinter.php` (ESC/POS over the Windows `PRINTER` queue) are installed and configured but **not currently used** by the controller; recent history moved away from direct ESC/POS printing.
