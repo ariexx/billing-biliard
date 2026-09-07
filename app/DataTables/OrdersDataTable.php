@@ -6,7 +6,6 @@ use App\Models\Order;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
-use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Services\DataTable;
 
@@ -34,7 +33,11 @@ class OrdersDataTable extends DataTable
                 return 'Rp ' . number_format($order->orderItems->sum('price'), 2, ',', '.');
             })
             ->addColumn('table_number', function (Order $order) {
-                return $order?->orderItems?->first()?->product?->name;
+                // Baris pertama belum tentu mejanya -- bisa sebotol minuman yang
+                // ditambahkan lebih dulu. Yang dicari baris bertipe billiard.
+                return $order->orderItems
+                    ->first(fn ($item) => $item->product?->type === 'Billiard')
+                    ?->product?->name ?? '-';
             })
             ->addColumn('payment_method', function (Order $order) {
                 return $order->payment?->name ?? '-';
@@ -67,6 +70,13 @@ class OrdersDataTable extends DataTable
             $query->where('user_uuid', auth()->id());
         }
 
+        // Rentang tanggal dibaca dari query string. URL ajax tabel ini memakai
+        // url()->full() (lihat html()), jadi parameternya ikut terbawa dan tabel
+        // menampilkan periode yang sama dengan kartu KPI di atasnya. Sebelumnya
+        // kartu berbunyi "hari ini" sementara tabelnya memuat seluruh riwayat.
+        [$dari, $sampai] = \App\Http\Controllers\HomeController::rentang(request());
+        $query->whereBetween('created_at', [$dari, $sampai]);
+
         return $query;
     }
 
@@ -80,16 +90,22 @@ class OrdersDataTable extends DataTable
         return $this->builder()
             ->setTableId('orders-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
-            //->dom('Bfrtip')
+            // url()->full() membawa parameter dari/sampai ke permintaan ajax.
+            ->ajax(url()->full())
             ->orderBy(6, 'desc')
             ->selectStyleSingle()
-            ->buttons([
-                Button::make('excel'),
-                Button::make('csv'),
-                Button::make('print'),
-                Button::make('reset'),
-                Button::make('reload')
+            // Tombol export TIDAK dipakai di sisi klien: plugin DataTables Buttons
+            // belum tentu termuat, dan itulah sebabnya dom('Bfrtip') dulu dimatikan.
+            // Export dikerjakan server lewat route order-history.export.
+            ->parameters([
+                'language' => [
+                    'search' => 'Cari:',
+                    'lengthMenu' => 'Tampilkan _MENU_ baris',
+                    'zeroRecords' => 'Tidak ada order pada periode ini',
+                    'info' => 'Menampilkan _START_-_END_ dari _TOTAL_ order',
+                    'infoEmpty' => 'Tidak ada order',
+                    'paginate' => ['previous' => 'Sebelumnya', 'next' => 'Berikutnya'],
+                ],
             ])
             ->responsive(true)
             ->serverSide(true);
@@ -107,14 +123,15 @@ class OrdersDataTable extends DataTable
         // header atau ketikan di kotak search menjadi "order by total" / "where
         // orders.cashier like ?" -> SQLSTATE 42S22 Unknown column.
         return [
-            Column::make('order_number'),
-            Column::computed('cashier'),
-            Column::computed('table_number'),
-            Column::computed('total'),
-            Column::computed('payment_method'),
-            Column::computed('status'),
-            Column::make('created_at'),
+            Column::make('order_number')->title('No. Order'),
+            Column::computed('cashier')->title('Kasir'),
+            Column::computed('table_number')->title('Meja'),
+            Column::computed('total')->title('Total'),
+            Column::computed('payment_method')->title('Metode Bayar'),
+            Column::computed('status')->title('Status'),
+            Column::make('created_at')->title('Waktu'),
             Column::computed('action')
+                ->title('')
                 ->exportable(false)
                 ->printable(false)
                 ->width(60)

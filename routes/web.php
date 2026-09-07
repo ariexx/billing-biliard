@@ -42,8 +42,12 @@ Route::group(['middleware' => 'auth'], function () {
         ->name('home');
     Route::get('/order-history', [\App\Http\Controllers\HomeController::class, 'orderHistory'])
         ->name('order-history');
+    Route::get('/order-history/export', [\App\Http\Controllers\HomeController::class, 'exportOrderHistory'])
+        ->name('order-history.export');
     Route::get('/order-history/drinks', [\App\Http\Controllers\HomeController::class, 'orderHistoryDrinks'])
         ->name('order-history.drinks');
+    Route::get('/order-history/drinks/export', [\App\Http\Controllers\HomeController::class, 'exportOrderHistoryDrinks'])
+        ->name('order-history.drinks.export');
 
     Route::get('/order/cari', [\App\Http\Controllers\OrderController::class, 'cari'])
         ->name('order.cari');

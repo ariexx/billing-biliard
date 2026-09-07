@@ -34,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
         Carbon::setLocale('id');
         date_default_timezone_set('Asia/Jakarta');
 
+        // Aplikasi ini memakai Bootstrap 5. Tanpa baris ini Laravel merender
+        // pagination bergaya Tailwind, yang di sini tampil tanpa gaya sama sekali.
+        \Illuminate\Pagination\Paginator::useBootstrapFive();
+
         $this->registerGoogleDriveDisk();
     }
 
