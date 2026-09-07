@@ -94,9 +94,23 @@ class OrdersDataTable extends DataTable
             ->ajax(url()->full())
             ->orderBy(6, 'desc')
             ->selectStyleSingle()
-            // Tombol export TIDAK dipakai di sisi klien: plugin DataTables Buttons
-            // belum tentu termuat, dan itulah sebabnya dom('Bfrtip') dulu dimatikan.
-            // Export dikerjakan server lewat route order-history.export.
+            /*
+             * dom dipatok TANPA 'B' (tombol Buttons).
+             *
+             * laravel-datatables-vite menyetel dom global yang memuat 'B', jadi
+             * tombol Excel/CSV/PDF/Print muncul sendiri walau tidak didaftarkan di
+             * sini. Tombol itu berbahaya pada tabel serverSide: ia hanya mengekspor
+             * baris yang sedang termuat di halaman (10 baris), bukan seluruh
+             * periode yang difilter -- laporan uang yang diam-diam tidak lengkap.
+             *
+             * Export dikerjakan server lewat route order-history.export, yang
+             * membaca rentang tanggal dan pembatasan peran yang sama.
+             */
+            ->dom(
+                "<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>".
+                "<'row'<'col-sm-12'tr>>".
+                "<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            )
             ->parameters([
                 'language' => [
                     'search' => 'Cari:',

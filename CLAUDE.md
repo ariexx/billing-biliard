@@ -147,7 +147,7 @@ Two things that were wrong before and must stay fixed:
 - **The table and the KPI cards must cover the same period.** The cards used to say "hari ini" above a table holding the entire history, so the numbers on top and the list below told different stories. `OrdersDataTable::html()` therefore sets `->ajax(url()->full())` so the range travels with the AJAX request, and `query()` reads it back through `HomeController::rentang()`.
 - **Role scoping applies to the export too**, not just the view — otherwise a cashier downloads every cashier's orders straight from the export URL.
 
-Client-side DataTables export buttons stay off (the Buttons plugin is not reliably loaded — that is why `dom('Bfrtip')` was commented out originally); export is a server route using `maatwebsite/excel`. The drinks screen counts `drink`, `snack` **and** `other`; it used to count only `drink`, so snacks sold at the same till appeared nowhere.
+**`OrdersDataTable::html()` must pin its own `dom`, without `B`.** `laravel-datatables-vite` sets a global `DataTable.defaults.dom` that includes `B`, so Excel/CSV/PDF/Print buttons appear even with no `Button::make()` in the code. On a `serverSide` table those buttons export only the rows currently loaded (one page), not the filtered period — a silently incomplete money report. Export is a server route using `maatwebsite/excel` instead; `DataTableDomTest` locks the `dom` so the package default cannot creep back in. The drinks screen counts `drink`, `snack` **and** `other`; it used to count only `drink`, so snacks sold at the same till appeared nowhere.
 
 `AppServiceProvider` calls `Paginator::useBootstrapFive()`. Without it Laravel emits Tailwind pagination markup into this Bootstrap app.
 
